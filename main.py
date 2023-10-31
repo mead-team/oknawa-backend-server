@@ -1,11 +1,14 @@
+from decouple import config
 from fastapi import FastAPI
 
 app = FastAPI()
 
+DEBUG = bool(config("DEBUG"))
+
 
 @app.get("/")
 def health_check():
-    return {"status": "Hello World"}
+    return {"health_check": "Hello World", "debug": DEBUG}
 
 
 @app.get("/items/{item_id}")
