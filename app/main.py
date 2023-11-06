@@ -1,11 +1,15 @@
 from decouple import config
 from fastapi import FastAPI
 from app.core.middleware import ProcessTimeMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 
 DEBUG = bool(config("DEBUG"))
+ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
 
 app = FastAPI()
+
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS)
 app.add_middleware(ProcessTimeMiddleware)
 
 
