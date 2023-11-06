@@ -1,8 +1,8 @@
 from decouple import config
 from fastapi import FastAPI
-from app.core.middleware import ProcessTimeMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.middleware import ProcessTimeMiddleware
 
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
@@ -21,6 +21,3 @@ def health_check():
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str | None = None):
     return {"item_id": item_id, "q": q}
-
-
-

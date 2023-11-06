@@ -1,6 +1,6 @@
 import time
-from fastapi import Request
 
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
@@ -11,4 +11,3 @@ class ProcessTimeMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
         return response
-
