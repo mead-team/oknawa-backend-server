@@ -2,8 +2,8 @@ from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.middleware import ProcessTimeMiddleware
 from app.core.database import SessionLocal, engine
+from app.core.middleware import ProcessTimeMiddleware
 
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
