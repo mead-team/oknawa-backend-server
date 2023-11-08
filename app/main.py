@@ -3,13 +3,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.middleware import ProcessTimeMiddleware
+from app.core.database import SessionLocal, engine
 
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
 
 app = FastAPI()
 
-app.add_middleware(CORSMiddleware, allow_origins=ORIGINS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(ProcessTimeMiddleware)
 
 
