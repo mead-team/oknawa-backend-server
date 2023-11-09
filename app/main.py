@@ -1,6 +1,7 @@
 from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.metadata import swagger_metadata
 
 from app.core.database import SessionLocal, engine
 from app.core.middleware import ProcessTimeMiddleware
@@ -8,7 +9,8 @@ from app.core.middleware import ProcessTimeMiddleware
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
 
-app = FastAPI()
+
+app = FastAPI(**swagger_metadata)
 
 app.add_middleware(
     CORSMiddleware,
