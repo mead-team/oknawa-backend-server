@@ -1,3 +1,5 @@
+from typing import Literal
+
 from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +28,11 @@ app.add_middleware(ProcessTimeMiddleware)
 @app.get("/")
 def health_check():
     return {"health_check": "Hello World", "debug": DEBUG}
+
+
+@app.get("/items/{category}")
+def read_item(category: Literal["food", "cafe", "drink"]):
+    return {"category": category}
 
 
 @app.get("/items/{item_id}")
