@@ -1,9 +1,10 @@
 from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.metadata import swagger_metadata
+from fastapi.staticfiles import StaticFiles
 
 from app.core.database import SessionLocal, engine
+from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
 
 DEBUG = bool(config("DEBUG"))
@@ -30,3 +31,6 @@ def health_check():
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str | None = None):
     return {"item_id": item_id, "q": q}
+
+
+app.mount("/static", StaticFiles(directory="app/core/static"), name="static")
