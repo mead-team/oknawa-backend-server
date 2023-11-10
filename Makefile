@@ -1,11 +1,11 @@
 app-build:
 	docker compose build
 
-app-stop:
-	docker compose down
-
-app-start:
+app-up:
 	docker compose up -d
+
+app-down:
+	docker compose down
 
 code-beauty:
 	black . && isort .
