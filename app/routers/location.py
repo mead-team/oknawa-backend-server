@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-
 from app.schemas.base import RouterTags
+
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
@@ -13,9 +13,12 @@ def temp1():
     return {}
 
 
-@router.post(
-    "/temp2",
+@router.get(
+    "/hotplace",
+    # response_model=res_user.Get200InvestmentTierHistory,
     summary="핫플레이스 리스트",
 )
-def temp2():
+def hotplace(
+    q: RequestHotplace = Depends()
+):
     return {}
