@@ -1,7 +1,8 @@
 version: '3.9'
 
 services:
-  web:
+  app:
+    container_name: oknawa_api
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
@@ -13,8 +14,11 @@ services:
       - db
     env_file:
       - .env
+    networks:
+      - oknawa-network
 
   db:
+    container_name: oknawa_db
     image: postgres:14
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -22,6 +26,11 @@ services:
       - .env
     ports:
       - 5433:5432
+    networks:
+      - oknawa-network
 
 volumes:
   postgres_data:
+
+networks:
+  oknawa-network:
