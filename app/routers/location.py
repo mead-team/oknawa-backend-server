@@ -1,27 +1,24 @@
 from fastapi import APIRouter, Depends
-from app.schemas.base import RouterTags
 
 from app.schemas import location as schema_location
+from app.schemas.base import RouterTags
 from app.services import location as service_location
-
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
 
 @router.post(
-    "/temp1",
-    summary="temp 중간지점 찾기",
+    "/point",
+    summary="중간 지점 찾기",
 )
-def temp1():
+def post_location_point():
     return {}
 
 
 @router.get(
-    "/hotplace",
+    "/point/place",
     response_model=schema_location.ResponseHotplace,
     summary="핫플레이스 리스트",
 )
-def hotplace(
-    q: schema_location.RequestHotplace = Depends()
-):
-    return service_location.hotplace(q)
+def get_location_point_place(q: schema_location.RequestHotplace = Depends()):
+    return service_location.get_location_point_place(q)

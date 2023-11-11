@@ -1,5 +1,3 @@
-from typing import Literal
-
 from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
