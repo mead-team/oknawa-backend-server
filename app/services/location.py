@@ -35,6 +35,7 @@ def calculate_distance(centroid_point, place_list):
             + (centroid_point_y - place_point_y) ** 2
         )
         if current_distance < largest_distance:
+            largest_distance = current_distance
             res = place_data
     return res
 
