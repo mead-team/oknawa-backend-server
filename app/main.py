@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.database import SessionLocal, engine
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
-from app.routers import location, item
+from app.routers import item, location
 
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
@@ -32,5 +32,6 @@ app.include_router(item.router)
 @app.get("/")
 def health_check():
     return {"health_check": "Hello World", "debug": DEBUG}
+
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")

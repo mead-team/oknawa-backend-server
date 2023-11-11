@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from app.schemas.base import RouterTags
 
+from app.schemas.base import RouterTags
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
