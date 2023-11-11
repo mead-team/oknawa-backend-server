@@ -8,6 +8,12 @@ def hotplace(q):
     headers = {
         "Authorization": f"KakaoAK {REST_API_KEY}"
     }
-    response = requests.get(url, headers=headers, params=q).json()
     
+    q = dict(q)
+    if q["category_name"] in ["food", "drink"]:
+        q.update(category_group_code="FD6")
+    if q["category_name"] == "cafe":
+        q.update(category_group_code="CE7")
+    
+    response = requests.get(url, headers=headers, params=q).json()
     return response
