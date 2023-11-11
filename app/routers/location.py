@@ -15,16 +15,7 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     summary="중간 지점 찾기",
 )
 def post_location_point(body: req_location.PostLocationPoint):
-    station_name = "강남 2호선"
-    address_name = "서울 강남구 역삼동 858"
-    x = "127.02800140627488"
-    y = "37.49808633653005"
-    return {
-        "station_name": station_name,
-        "address_name": address_name,
-        "x": x,
-        "y": y,
-    }
+    return service_location.get_location_point(body)
 
 
 @router.get(
