@@ -2,5 +2,6 @@ from enum import Enum
 
 
 class RouterTags(Enum):
-    items = "items"
+    item = "item"
     users = "users"
+    location = "location"

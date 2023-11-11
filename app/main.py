@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.database import SessionLocal, engine
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
-from app.schemas.base import RouterTags
+from app.routers import location, item
 
 DEBUG = bool(config("DEBUG"))
 ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
@@ -25,20 +25,12 @@ app.add_middleware(
 )
 app.add_middleware(ProcessTimeMiddleware)
 
+app.include_router(location.router)
+app.include_router(item.router)
+
 
 @app.get("/")
 def health_check():
     return {"health_check": "Hello World", "debug": DEBUG}
-
-
-@app.get("/items/{category}", tags=[RouterTags.items])
-def read_item(category: Literal["food", "cafe", "drink"]):
-    return {"category": category}
-
-
-@app.get("/items/{item_id}", tags=[RouterTags.items])
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
-
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")
