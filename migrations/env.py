@@ -1,17 +1,18 @@
 from logging.config import fileConfig
 
 from alembic import context
-from decouple import config as decouple_config
 from sqlalchemy import engine_from_config, pool
 
 from app.core.database import Base
+from app.core.setting import settings
 from app.models.item import *
 
-POSTGRES_USER = decouple_config("POSTGRES_USER")
-POSTGRES_PASSWORD = decouple_config("POSTGRES_PASSWORD")
-POSTGRES_HOST = decouple_config("POSTGRES_HOST")
-POSTGRES_DB = decouple_config("POSTGRES_DB")
-DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{POSTGRES_DB}"
+POSTGRES_USER = settings.POSTGRES_USER
+POSTGRES_PASSWORD = settings.POSTGRES_PASSWORD
+POSTGRES_DB = settings.POSTGRES_DB
+DOCKER_DB_HOST = settings.DOCKER_DB_HOST
+DOCKER_PORT_PORT = settings.DOCKER_PORT_PORT
+DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{DOCKER_DB_HOST }:{DOCKER_PORT_PORT}/{POSTGRES_DB}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

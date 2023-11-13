@@ -7,13 +7,13 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./:/usr/src/app
-      - ./.env:/usr/src/app/.env
+      - ./base.env:/usr/src/app/base.env
     ports:
       - 8000:8000
     depends_on:
       - db
     env_file:
-      - .env
+      - env/base.env
     networks:
       - oknawa-network
 
@@ -23,7 +23,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - .env
+      - env/base.env
     ports:
       - 5433:5432
     networks:
