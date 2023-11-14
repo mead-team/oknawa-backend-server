@@ -27,6 +27,7 @@ def calculate_distance(centroid_point, place_list):
     centroid_point_x, centroid_point_y = centroid_point
     largest_distance = float("inf")
     res = None
+    
     for place_data in place_list:
         place_point_x = float(place_data["x"])
         place_point_y = float(place_data["y"])
