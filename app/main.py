@@ -35,7 +35,7 @@ def start():
 
 @app.get("/")
 def health_check():
-    return {"health_check": "Hello World", "debug": settings.DEBUG}
+    return {"health_check": "oknawa-backend-server is Ok", "debug": settings.DEBUG}
 
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")
