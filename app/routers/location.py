@@ -30,7 +30,7 @@ def get_location_point_place(q: schema_location.RequestHotplace = Depends()):
 
 
 @router.post(
-    "/location",
+    "/meeting",
     response_model=res_location.PostPopularMeetingLocation,
     summary="인기 있는 만남 장소 생성",
 )
