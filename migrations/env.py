@@ -6,13 +6,14 @@ from sqlalchemy import engine_from_config, pool
 from app.core.database import Base
 from app.core.setting import settings
 from app.models.item import *
+from app.models.location import *
 
 POSTGRES_USER = settings.POSTGRES_USER
 POSTGRES_PASSWORD = settings.POSTGRES_PASSWORD
 POSTGRES_DB = settings.POSTGRES_DB
-DOCKER_DB_HOST = settings.DOCKER_DB_HOST
-DOCKER_PORT_PORT = settings.DOCKER_PORT_PORT
-DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{DOCKER_DB_HOST }:{DOCKER_PORT_PORT}/{POSTGRES_DB}"
+POSTGRES_HOST = settings.POSTGRES_HOST
+POSTGRES_PORT = settings.POSTGRES_PORT
+DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST }:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

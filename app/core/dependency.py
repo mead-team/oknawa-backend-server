@@ -1,4 +1,4 @@
-from database import SessionLocal
+from app.core.database import SessionLocal
 from sqlalchemy.exc import SQLAlchemyError
 
 

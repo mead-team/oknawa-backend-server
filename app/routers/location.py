@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from app.schemas import location as schema_location
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
 from app.services import location as service_location
+from app.core.dependency import get_db
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
@@ -15,7 +17,7 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     summary="중간 지점 찾기",
 )
 def post_location_point(body: req_location.PostLocationPoint):
-    return service_location.get_location_point(body)
+    return service_location.post_location_point(body)
 
 
 @router.get(
@@ -25,3 +27,12 @@ def post_location_point(body: req_location.PostLocationPoint):
 )
 def get_location_point_place(q: schema_location.RequestHotplace = Depends()):
     return service_location.get_location_point_place(q)
+
+
+@router.post(
+    "/meeting",
+    response_model=res_location.PostPopularMeetingLocation,
+    summary="인기 있는 만남 장소 생성",
+)
+def post_popular_meeting_location(db: Session = Depends(get_db)):
+    return service_location.post_popular_meeting_location(db)
