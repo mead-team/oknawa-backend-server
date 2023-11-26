@@ -5,6 +5,8 @@ from decouple import config
 
 from app.core.setting import settings
 from app.services.temp_point_location import target
+from app.crud import location
+from app.models.location import PopularMeetingLocation
 
 
 def calculate_centroid(vertices):
@@ -77,7 +79,7 @@ def get_location_point_place(q):
     return response
 
 
-def get_location_point():
+def post_popular_meeting_location(db):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
     TARGET_STATION = [
         "가산디지털단지역",
@@ -126,21 +128,28 @@ def get_location_point():
         "북한산우이역",
     ]
 
-    kakao_station_data = {}
+    popular_meeting_location_obj = []
     for station in TARGET_STATION:
         url = "https://dapi.kakao.com/v2/local/search/keyword.json"
         headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
         params = {"query": station}
         response = requests.get(url, headers=headers, params=params)
 
-        for station_data in response.json()["documents"]:
-            if station_data["category_group_name"] == "지하철역":
-                print(station_data)
-                kakao_station_data[station] = station_data
-            else:
-                pass
+        for kakao_data in response.json()["documents"]:
+            if kakao_data["category_group_name"] == "지하철역":
+                location_obj = PopularMeetingLocation(
+                    name=station,
+                    type="station",
+                    url=kakao_data["place_url"],
+                    address=kakao_data["road_address_name"],
+                    location_x=kakao_data["x"],
+                    location_y=kakao_data["y"],
+                )
+                popular_meeting_location_obj.append(location_obj)
+                break
 
+    location.create_popular_meeting_location(db, popular_meeting_location_obj)
     response = {
-        "station_data": kakao_station_data,
+        "msg": "인기 있는 장소 생성 완료",
     }
     return response

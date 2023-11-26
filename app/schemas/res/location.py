@@ -6,3 +6,7 @@ class PostLocationPoint(BaseModel):
     address_name: str = Field(title="도로명 주소", description="도로명 주소")
     x: str = Field(title="x좌표", description="x좌표")
     y: str = Field(title="y좌표", description="y좌표")
+
+
+class PostPopularMeetingLocation(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")

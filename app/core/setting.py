@@ -9,8 +9,6 @@ class GlobalSettings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
-    DOCKER_DB_HOST: str
-    DOCKER_PORT_PORT: str
     DEBUG: str
     ALLOWED_ORIGINS: str
     KAKAO_REST_API_KEY: str
