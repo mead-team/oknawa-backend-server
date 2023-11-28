@@ -4,9 +4,9 @@ import requests
 from decouple import config
 
 from app.core.setting import settings
-from app.services.temp_point_location import target
 from app.crud import location
 from app.models.location import PopularMeetingLocation
+from app.services.temp_point_location import target
 
 
 def calculate_centroid(vertices):
@@ -54,7 +54,7 @@ def post_location_point(body):
     address_name = location_data["road_address_name"]
     point_x = location_data["x"]
     point_y = location_data["y"]
-    
+
     url = "https://apis.openapi.sk.com/transit/routes"
     headers = {
         "accept": "application/json",
@@ -80,21 +80,29 @@ def post_location_point(body):
         if response.status_code == 200:
             # Successful request
             """
-                출발주소는 상관업고
-                중간지점 역을 찾아서
-                출발주소와 중간역을 리턴 (워크 to 워크)
-                우선순위는 지하철
-                지하철 데이터가 없을경우엔
-                최단시간으로 제공
+            출발주소는 상관업고
+            중간지점 역을 찾아서
+            출발주소와 중간역을 리턴 (워크 to 워크)
+            우선순위는 지하철
+            지하철 데이터가 없을경우엔
+            최단시간으로 제공
             """
-            
+
             result = response.json()
-            subway_list = list(filter(lambda x: x['pathType'] == 1, result['metaData']['plan']['itineraries']))
+            subway_list = list(
+                filter(
+                    lambda x: x["pathType"] == 1,
+                    result["metaData"]["plan"]["itineraries"],
+                )
+            )
             if subway_list:
-                itinerary = min(subway_list, key= lambda x: x['totalTime'])
+                itinerary = min(subway_list, key=lambda x: x["totalTime"])
             else:
-                itinerary = min(result['metaData']['plan']['itineraries'], key= lambda x: x['totalTime'])
-            
+                itinerary = min(
+                    result["metaData"]["plan"]["itineraries"],
+                    key=lambda x: x["totalTime"],
+                )
+
             itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
         else:
             # Failed request
@@ -105,7 +113,7 @@ def post_location_point(body):
         "address_name": address_name,
         "x": point_x,
         "y": point_y,
-        "itinerary": itinerary_list
+        "itinerary": itinerary_list,
     }
     return response
 
