@@ -52,14 +52,60 @@ def post_location_point(body):
 
     station_name = location_data["place_name"]
     address_name = location_data["road_address_name"]
-    x = location_data["x"]
-    y = location_data["y"]
+    point_x = location_data["x"]
+    point_y = location_data["y"]
+    
+    url = "https://apis.openapi.sk.com/transit/routes"
+    headers = {
+        "accept": "application/json",
+        "appKey": "e8wHh2tya84M88aReEpXCa5XTQf3xgo01aZG39k5",
+        "content-type": "application/json",
+    }
+
+    itinerary_list = list()
+    for participant in body.participant:
+        x, y = float(participant.x), float(participant.y)
+        data = {
+            "startX": x,
+            "startY": y,
+            "endX": point_x,
+            "endY": point_y,
+            "format": "json",
+            "count": 10,
+            "searchDttm": "202301011200",
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            # Successful request
+            """
+                출발주소는 상관업고
+                중간지점 역을 찾아서
+                출발주소와 중간역을 리턴 (워크 to 워크)
+                우선순위는 지하철
+                지하철 데이터가 없을경우엔
+                최단시간으로 제공
+            """
+            
+            result = response.json()
+            subway_list = list(filter(lambda x: x['pathType'] == 1, result['metaData']['plan']['itineraries']))
+            if subway_list:
+                itinerary = min(subway_list, key= lambda x: x['totalTime'])
+            else:
+                itinerary = min(result['metaData']['plan']['itineraries'], key= lambda x: x['totalTime'])
+            
+            itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
+        else:
+            # Failed request
+            print(f"Error: {response.status_code}, {response.text}")
 
     response = {
         "station_name": station_name,
         "address_name": address_name,
-        "x": x,
-        "y": y,
+        "x": point_x,
+        "y": point_y,
+        "itinerary": itinerary_list
     }
     return response
 
