@@ -4,62 +4,136 @@ import requests
 from decouple import config
 
 from app.core.setting import settings
-from app.services.temp_point_location import target
 from app.crud import location
 from app.models.location import PopularMeetingLocation
+from app.services.temp_point_location import target
 
 
-def calculate_centroid(vertices):
-    total_weight = 0
+def calculate_centroid(body):
+    """n개의 좌표의 중간지점 계산, 각 연속된 2D(Dimension) 좌표의 평균을 계산
+
+    Args:
+        body (obj): /point의 request로 받은 유저별 좌표
+        
+    Returns:
+        tuple: (중간지점x좌표, 중간지점y좌표)
+    """
     centroid_x = 0
     centroid_y = 0
 
-    for vertex in vertices.participant:
+    for vertex in body.participant:
         x, y = float(vertex.x), float(vertex.y)
-        total_weight += 1
         centroid_x += x
         centroid_y += y
 
-    centroid_x /= total_weight
-    centroid_y /= total_weight
-
-    return centroid_x, centroid_y
+    centroid_x /= len(body)
+    centroid_y /= len(body)
+    centroid_point = (centroid_x, centroid_y)
+    
+    return centroid_point
 
 
 def calculate_distance(centroid_point, place_list):
-    centroid_point_x, centroid_point_y = centroid_point
-    largest_distance = float("inf")
-    res = None
+    """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴 
 
-    for place_data in place_list:
-        place_point_x = float(place_data["x"])
-        place_point_y = float(place_data["y"])
+    Args:
+        centroid_point (tuple): (중간지점x좌표, 중간지점y좌표)
+        place_list (list): temp_point_location의 target dict의 values()
+
+    Returns:
+        dict: place_list의 요소 중간지점좌표와 가장가까운 역
+    """
+    centroid_x, centroid_y = centroid_point
+    largest_distance = float("inf")
+    location_data = None
+
+    for place in place_list:
+        place_point_x = float(place.get("x"))
+        place_point_y = float(place.get("y"))
         current_distance = math.sqrt(
-            (centroid_point_x - place_point_x) ** 2
-            + (centroid_point_y - place_point_y) ** 2
+            (centroid_x - place_point_x) ** 2
+            + (centroid_y - place_point_y) ** 2
         )
         if current_distance < largest_distance:
             largest_distance = current_distance
-            res = place_data
-    return res
+            location_data = place
+    return location_data
 
 
 def post_location_point(body):
-    place_list = target.values()
+    """
+        사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
+        tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
+        
+        일단 어떤 데이터만 쓸지 모르기 때문에 API자체를 리턴, 추후에 데이터 정제하여 고도화
+        
+        우선순위는 지하철 지하철 데이터가 없을경우엔 최단시간으로 제공
 
+    Args:
+        body (obj): /point의 request로 받은 유저별 좌표
+
+    Returns:
+        dict: response 데이터
+    """
     centroid_point = calculate_centroid(body)
+    place_list = target.values()
     location_data = calculate_distance(centroid_point, place_list)
 
-    station_name = location_data["place_name"]
-    address_name = location_data["road_address_name"]
-    x = location_data["x"]
-    y = location_data["y"]
+    station_name = location_data.get("place_name")
+    address_name = location_data.get("road_address_name")
+    point_x = location_data.get("x")
+    point_y = location_data.get("y")
+
+    # Tmap
+    url = "https://apis.openapi.sk.com/transit/routes"
+    headers = {
+        "accept": "application/json",
+        "appKey": "e8wHh2tya84M88aReEpXCa5XTQf3xgo01aZG39k5",
+        "content-type": "application/json",
+    }
+
+    itinerary_list = list()
+    for participant in body.participant:
+        x, y = float(participant.x), float(participant.y)
+        data = {
+            "startX": x,
+            "startY": y,
+            "endX": point_x,
+            "endY": point_y,
+            "format": "json",
+            "count": 10,
+            "searchDttm": "202301011200",
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            subway_list = list(
+                filter(
+                    lambda x: x["pathType"] == 1,
+                    result["metaData"]["plan"]["itineraries"],
+                )
+            )
+            if subway_list:
+                itinerary = min(subway_list, key=lambda x: x["totalTime"])
+            else:
+                itinerary = min(
+                    result["metaData"]["plan"]["itineraries"],
+                    key=lambda x: x["totalTime"],
+                )
+
+            itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
+        else:
+            # Failed request
+            print(f"Error: {response.status_code}, {response.text}")
 
     response = {
         "station_name": station_name,
         "address_name": address_name,
-        "x": x,
-        "y": y,
+        "x": point_x,
+        "y": point_y,
+        "itinerary": itinerary_list,
     }
     return response
 

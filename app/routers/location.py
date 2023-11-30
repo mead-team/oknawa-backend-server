@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.dependency import get_db
 from app.schemas import location as schema_location
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
 from app.services import location as service_location
-from app.core.dependency import get_db
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
