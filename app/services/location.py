@@ -14,7 +14,7 @@ def calculate_centroid(body):
 
     Args:
         body (obj): /point의 request로 받은 유저별 좌표
-        
+
     Returns:
         tuple: (중간지점x좌표, 중간지점y좌표)
     """
@@ -29,12 +29,12 @@ def calculate_centroid(body):
     centroid_x /= len(participant)
     centroid_y /= len(participant)
     centroid_point = (centroid_x, centroid_y)
-    
+
     return centroid_point
 
 
 def calculate_distance(centroid_point, place_list):
-    """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴 
+    """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴
 
     Args:
         centroid_point (tuple): (중간지점x좌표, 중간지점y좌표)
@@ -51,8 +51,7 @@ def calculate_distance(centroid_point, place_list):
         place_point_x = float(place.get("x"))
         place_point_y = float(place.get("y"))
         current_distance = math.sqrt(
-            (centroid_x - place_point_x) ** 2
-            + (centroid_y - place_point_y) ** 2
+            (centroid_x - place_point_x) ** 2 + (centroid_y - place_point_y) ** 2
         )
         if current_distance < largest_distance:
             largest_distance = current_distance
@@ -64,9 +63,9 @@ def post_location_point(body):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
-        
+
         일단 어떤 데이터만 쓸지 모르기 때문에 API자체를 리턴, 추후에 데이터 정제하여 고도화
-        
+
         우선순위는 지하철 지하철 데이터가 없을경우엔 최단시간으로 제공
 
     Args:
@@ -89,7 +88,7 @@ def post_location_point(body):
     # Tmap
     url = "https://apis.openapi.sk.com/transit/routes"
     headers = {"appKey": f"{TMAP_REST_API_KEY}"}
-    
+
     itinerary_list = list()
     for participant in body.participant:
         x, y = float(participant.x), float(participant.y)
