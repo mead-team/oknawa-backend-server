@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.database import SessionLocal, engine
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
+from app.core.redis import redis_config
 from app.core.setting import settings
 from app.routers import item, location
 
@@ -33,9 +33,19 @@ def start():
     print(f"👋 Bye, Shut down the server in the {settings.APP_ENV} environment")
 
 
-@app.get("/")
-def health_check():
-    return {"health_check": "oknawa-backend-server is Ok", "debug": settings.DEBUG}
+@app.get("/api-health-check")
+def api_health_check():
+    return {
+        "api_health_check": "oknawa-backend-api-server is Ok",
+        "debug-mode": settings.DEBUG,
+    }
+
+
+@app.get("/redis-health-check")
+async def redis_health_check():
+    redis_config.set("redis-server_status", "Ok")
+    value = redis_config.get("redis-server_status").decode("utf-8")
+    return {"redis_health_check": f"oknawa-backend-api-server is {value}"}
 
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")

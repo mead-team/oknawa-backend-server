@@ -9,10 +9,13 @@ class GlobalSettings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
-    DEBUG: str
+    DEBUG: bool
     ALLOWED_ORIGINS: str
     KAKAO_REST_API_KEY: str
     TMAP_REST_API_KEY: str
+    REDIS_HOST: str
+    REDIS_PORT: str
+    REDIS_DATABASE: str
 
     class Config:
         env_file = "env/base.env"

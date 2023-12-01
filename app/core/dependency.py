@@ -1,5 +1,6 @@
-from app.core.database import SessionLocal
 from sqlalchemy.exc import SQLAlchemyError
+
+from app.core.database import SessionLocal
 
 
 def get_db():
