@@ -20,14 +20,14 @@ def calculate_centroid(body):
     """
     centroid_x = 0
     centroid_y = 0
+    participant = body.get("participant")
 
-    for vertex in body.participant:
-        x, y = float(vertex.x), float(vertex.y)
+    for vertex in participant:
+        x, y = vertex.get("x"), vertex.get("y")
         centroid_x += x
         centroid_y += y
-
-    centroid_x /= len(body)
-    centroid_y /= len(body)
+    centroid_x /= len(participant)
+    centroid_y /= len(participant)
     centroid_point = (centroid_x, centroid_y)
     
     return centroid_point
@@ -75,7 +75,9 @@ def post_location_point(body):
     Returns:
         dict: response 데이터
     """
-    centroid_point = calculate_centroid(body)
+    TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
+    centroid_point = calculate_centroid(body.dict())
+    print(centroid_point)
     place_list = target.values()
     location_data = calculate_distance(centroid_point, place_list)
 
@@ -86,12 +88,8 @@ def post_location_point(body):
 
     # Tmap
     url = "https://apis.openapi.sk.com/transit/routes"
-    headers = {
-        "accept": "application/json",
-        "appKey": "e8wHh2tya84M88aReEpXCa5XTQf3xgo01aZG39k5",
-        "content-type": "application/json",
-    }
-
+    headers = {"appKey": f"{TMAP_REST_API_KEY}"}
+    
     itinerary_list = list()
     for participant in body.participant:
         x, y = float(participant.x), float(participant.y)
@@ -138,10 +136,10 @@ def post_location_point(body):
     return response
 
 
-def get_location_point_place(q):
-    REST_API_KEY = config("KAKAO_REST_API_KEY")
+def get_point_place(q):
+    KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
     url = "https://dapi.kakao.com/v2/local/search/category.json"
-    headers = {"Authorization": f"KakaoAK {REST_API_KEY}"}
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
 
     q = dict(q)
     if q["category_name"] in ["food", "drink"]:

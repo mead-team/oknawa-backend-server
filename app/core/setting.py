@@ -12,6 +12,7 @@ class GlobalSettings(BaseSettings):
     DEBUG: str
     ALLOWED_ORIGINS: str
     KAKAO_REST_API_KEY: str
+    TMAP_REST_API_KEY: str
 
     class Config:
         env_file = "env/base.env"
