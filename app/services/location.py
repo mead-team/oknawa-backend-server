@@ -23,7 +23,7 @@ def calculate_centroid(body):
     participant = body.get("participant")
 
     for vertex in participant:
-        x, y = vertex.get("x"), vertex.get("y")
+        x, y = vertex.get("start_x"), vertex.get("start_y")
         centroid_x += x
         centroid_y += y
     centroid_x /= len(participant)
@@ -76,14 +76,13 @@ def post_location_point(body):
     """
     TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
     centroid_point = calculate_centroid(body.dict())
-    print(centroid_point)
     place_list = target.values()
     location_data = calculate_distance(centroid_point, place_list)
 
     station_name = location_data.get("place_name")
     address_name = location_data.get("road_address_name")
-    point_x = location_data.get("x")
-    point_y = location_data.get("y")
+    end_x = location_data.get("x")
+    end_y = location_data.get("y")
 
     # Tmap
     url = "https://apis.openapi.sk.com/transit/routes"
@@ -91,18 +90,12 @@ def post_location_point(body):
 
     itinerary_list = list()
     for participant in body.participant:
-        x, y = float(participant.x), float(participant.y)
-        data = {
-            "startX": x,
-            "startY": y,
-            "endX": point_x,
-            "endY": point_y,
-            "format": "json",
-            "count": 10,
-            "searchDttm": "202301011200",
-        }
-
-        response = requests.post(url, headers=headers, json=data)
+        start_x, start_y = float(participant.start_x), float(participant.start_y)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=dict(startX=start_x, startY=start_y, endX=end_x, endY=end_y),
+        )
 
         if response.status_code == 200:
             result = response.json()
@@ -128,25 +121,28 @@ def post_location_point(body):
     response = {
         "station_name": station_name,
         "address_name": address_name,
-        "x": point_x,
-        "y": point_y,
+        "end_x": end_x,
+        "end_y": end_y,
         "itinerary": itinerary_list,
     }
     return response
 
 
-def get_point_place(q):
+def get_point_place(path, query):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    url = "https://dapi.kakao.com/v2/local/search/category.json"
+    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
 
-    q = dict(q)
-    if q["category_name"] in ["food", "drink"]:
-        q.update(category_group_code="FD6")
-    if q["category_name"] == "cafe":
-        q.update(category_group_code="CE7")
+    query = query.dict()
+    if path == "food":
+        query.update(category_group_code="FD6", query="음식점")
+    elif path == "drink":
+        query.update(category_group_code="FD6", query="술집")
+    elif path == "cafe":
+        query.update(category_group_code="CE7", query="카페")
 
-    response = requests.get(url, headers=headers, params=q).json()
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    response = requests.get(url, headers=headers, params=query).json()
     return response
 
 
