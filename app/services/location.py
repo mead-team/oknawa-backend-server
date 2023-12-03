@@ -1,12 +1,10 @@
 import math
 
 import requests
-from decouple import config
 
 from app.core.setting import settings
 from app.crud import location
 from app.models.location import PopularMeetingLocation
-from app.services.temp_point_location import target
 
 
 def calculate_centroid(body):
@@ -33,7 +31,7 @@ def calculate_centroid(body):
     return centroid_point
 
 
-def calculate_distance(centroid_point, place_list):
+def calculate_distance(centroid_point, place_data):
     """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴
 
     Args:
@@ -47,9 +45,9 @@ def calculate_distance(centroid_point, place_list):
     largest_distance = float("inf")
     location_data = None
 
-    for place in place_list:
-        place_point_x = float(place.get("x"))
-        place_point_y = float(place.get("y"))
+    for place in place_data:
+        place_point_x = float(place.location_x)
+        place_point_y = float(place.location_y)
         current_distance = math.sqrt(
             (centroid_x - place_point_x) ** 2 + (centroid_y - place_point_y) ** 2
         )
@@ -59,7 +57,7 @@ def calculate_distance(centroid_point, place_list):
     return location_data
 
 
-def post_location_point(body):
+def post_location_point(body, db):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
@@ -76,13 +74,13 @@ def post_location_point(body):
     """
     TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
     centroid_point = calculate_centroid(body.dict())
-    place_list = target.values()
-    location_data = calculate_distance(centroid_point, place_list)
+    place_data = location.get_popular_meeting_location(db)
 
-    station_name = location_data.get("place_name")
-    address_name = location_data.get("road_address_name")
-    end_x = location_data.get("x")
-    end_y = location_data.get("y")
+    location_data = calculate_distance(centroid_point, place_data)
+    station_name = location_data.name
+    address_name = location_data.address
+    end_x = location_data.location_x
+    end_y = location_data.location_y
 
     # Tmap
     url = "https://apis.openapi.sk.com/transit/routes"

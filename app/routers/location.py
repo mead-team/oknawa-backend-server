@@ -17,8 +17,10 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     response_model=res_location.PostLocationPoint,
     summary="사용자들간의 중간지점역 찾기",
 )
-def post_location_point(body: req_location.PostLocationPoint):
-    return service_location.post_location_point(body)
+def post_location_point(
+    body: req_location.PostLocationPoint, db: Session = Depends(get_db)
+):
+    return service_location.post_location_point(body, db)
 
 
 @router.get(
