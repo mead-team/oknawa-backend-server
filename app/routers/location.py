@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
 from app.core.dependency import get_db
@@ -20,12 +22,15 @@ def post_location_point(body: req_location.PostLocationPoint):
 
 
 @router.get(
-    "/point/place",
+    "/point/place/{category}",
     response_model=res_location.GetPointPlace,
     summary="중간지점역의 핫플레이스(만날장소) 리스트",
 )
-def get_point_place(q: req_location.GetPointPlace = Depends()):
-    return service_location.get_point_place(q)
+def get_point_place(
+    category: Literal["food", "cafe", "drink"] = Path(),
+    query: req_location.GetPointPlace = Depends(),
+):
+    return service_location.get_point_place(category, query)
 
 
 @router.post(

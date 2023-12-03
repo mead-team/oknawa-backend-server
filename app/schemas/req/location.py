@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field
 
 class Participant(BaseModel):
     name: str = Field(title="참여자 이름", description="참여자 이름")
-    x: float = Field(title="x좌표", description="x좌표")
-    y: float = Field(title="y좌표", description="y좌표")
+    start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")
+    start_y: float = Field(title="참여자 시작 y좌표", description="y좌표")
 
 
 class PostLocationPoint(BaseModel):
@@ -14,11 +14,8 @@ class PostLocationPoint(BaseModel):
 
 
 class GetPointPlace(BaseModel):
-    category_name: Literal["food", "cafe", "drink"] = Field(
-        title="카테고리", description="카테고리"
-    )
-    x: float = Field(title="x좌표", description="x좌표")
-    y: float = Field(title="y좌표", description="y좌표")
+    x: float = Field(title="인기있는역 x좌표", description="x좌표")
+    y: float = Field(title="인기있는역 y좌표", description="y좌표")
     radius: int = Field(500, title="범위 (미터)", description="범위")
     page: int = Field(1, title="범위 (미터)", description="범위")
     size: int = Field(15, title="범위 (미터)", description="범위")
