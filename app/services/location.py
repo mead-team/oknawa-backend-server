@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 
 import requests
 
@@ -31,7 +32,7 @@ def calculate_centroid(body):
     return centroid_point
 
 
-def calculate_distance(centroid_point, place_data):
+def calculate_distance(centroid_point, place_data_in_db):
     """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴
 
     Args:
@@ -45,7 +46,7 @@ def calculate_distance(centroid_point, place_data):
     largest_distance = float("inf")
     location_data = None
 
-    for place in place_data:
+    for place in place_data_in_db:
         place_point_x = float(place.location_x)
         place_point_y = float(place.location_y)
         current_distance = math.sqrt(
@@ -74,9 +75,9 @@ def post_location_point(body, db):
     """
     TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
     centroid_point = calculate_centroid(body.dict())
-    place_data = location.get_popular_meeting_location(db)
+    place_data_in_db = location.get_popular_meeting_location_all(db)
 
-    location_data = calculate_distance(centroid_point, place_data)
+    location_data = calculate_distance(centroid_point, place_data_in_db)
     station_name = location_data.name
     address_name = location_data.address
     end_x = location_data.location_x
@@ -189,10 +190,12 @@ def post_popular_meeting_location(db):
         "고덕역",
         "대림역",
         "남구로역",
+        "당산역",
         "장지역",
         "북한산우이역",
     ]
 
+    current_time = datetime.now()
     popular_meeting_location_obj = []
     for station in TARGET_STATION:
         url = "https://dapi.kakao.com/v2/local/search/keyword.json"
@@ -202,19 +205,30 @@ def post_popular_meeting_location(db):
 
         for kakao_data in response.json()["documents"]:
             if kakao_data["category_group_name"] == "지하철역":
-                location_obj = PopularMeetingLocation(
-                    name=station,
-                    type="station",
-                    url=kakao_data["place_url"],
-                    address=kakao_data["road_address_name"],
-                    location_x=kakao_data["x"],
-                    location_y=kakao_data["y"],
+                popular_meeting_location_exists_in_db = (
+                    location.get_popular_meeting_location_first(
+                        db, station, kakao_data["x"], kakao_data["y"]
+                    )
                 )
-                popular_meeting_location_obj.append(location_obj)
+                if not popular_meeting_location_exists_in_db:
+                    location_obj = PopularMeetingLocation(
+                        name=station,
+                        type="station",
+                        url=kakao_data["place_url"],
+                        address=kakao_data["road_address_name"],
+                        location_x=kakao_data["x"],
+                        location_y=kakao_data["y"],
+                    )
+                    popular_meeting_location_obj.append(location_obj)
+                else:
+                    popular_meeting_location_exists_in_db.updated_at = current_time
                 break
+    db.commit()
 
     location.create_popular_meeting_location(db, popular_meeting_location_obj)
+    location.get_popular_meeting_location_to_deleted(db, current_time)
+
     response = {
-        "msg": "인기 있는 장소 생성 완료",
+        "msg": "인기 있는 장소 최신화 완료",
     }
     return response
