@@ -7,6 +7,9 @@ app-up:
 app-down:
 	docker-compose down
 
+api-down:
+	docker stop oknawa_api
+
 code-beauty:
 	black . && isort .
 
