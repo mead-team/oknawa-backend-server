@@ -23,7 +23,7 @@ app-log:
 	docker-compose logs -f app
 
 app-test:
-	docker-compose exec app "pytest"
+	docker-compose exec app pytest --cov
 
 db-migrate:
 	docker-compose exec app alembic revision --autogenerate -m "${MSG}"
@@ -32,4 +32,4 @@ db-upgrade:
 	docker-compose exec app alembic upgrade head
 
 pip-list:
-	docker-compose exec app sh -c "pip list"
+	docker-compose exec app pip list
