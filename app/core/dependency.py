@@ -9,7 +9,9 @@ def get_db():
         yield db
     except SQLAlchemyError as e:
         db.rollback()
+        raise e
     except Exception as e:
         db.rollback()
+        raise e
     finally:
         db.close()
