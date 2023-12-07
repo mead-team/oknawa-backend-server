@@ -149,72 +149,27 @@ def get_point_place(path, query):
 
 def post_popular_meeting_location(db):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    TARGET_STATION = [
-        "가산디지털단지역",
-        "강남역",
-        "고속터미널역",
-        "교대역",
-        "천호역",
-        "양재역",
-        "군자역",
-        "왕십리역",
-        "신논현역·논현역",
-        "홍대입구역(2호선)",
-        "선릉역",
-        "신도림역",
-        "연신내역",
-        "동대문역",
-        "건대입구역",
-        "충정로역",
-        "사당역",
-        "혜화역",
-        "용산역",
-        "뚝섬역",
-        "신촌·이대역",
-        "서울대입구역",
-        "성신여대입구역",
-        "총신대입구(이수)역",
-        "역삼역",
-        "구로디지털단지역",
-        "합정역",
-        "장한평역",
-        "이태원역",
-        "미아사거리역",
-        "회기역",
-        "오목교역·목동운동장",
-        "발산역",
-        "신림역",
-        "서울역",
-        "수유역",
-        "서울식물원·마곡나루역",
-        "구로역",
-        "삼각지역",
-        "고덕역",
-        "대림역",
-        "남구로역",
-        "당산역",
-        "장지역",
-        "북한산우이역",
-    ]
-
+    popular_subway_redis_data = json.loads(redis_config.get("popular_subway").decode("utf-8"))
+    popular_subway_name = [data["subway_name"] for data in popular_subway_redis_data]
     current_time = datetime.now()
+
     popular_meeting_location_obj = []
-    for station in TARGET_STATION:
+    for subway_name in popular_subway_name:
         url = "https://dapi.kakao.com/v2/local/search/keyword.json"
         headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
-        params = {"query": station}
+        params = {"query": subway_name}
         api_response = requests.get(url, headers=headers, params=params)
 
         for kakao_data in api_response.json()["documents"]:
             if kakao_data["category_group_name"] == "지하철역":
                 popular_meeting_location_exists_in_db = (
                     location.get_popular_meeting_location_first(
-                        db, station, kakao_data["x"], kakao_data["y"]
+                        db, kakao_data["place_name"], kakao_data["x"], kakao_data["y"]
                     )
                 )
                 if not popular_meeting_location_exists_in_db:
                     location_obj = PopularMeetingLocation(
-                        name=station,
+                        name=kakao_data["place_name"],
                         type="station",
                         url=kakao_data["place_url"],
                         address=kakao_data["road_address_name"],
