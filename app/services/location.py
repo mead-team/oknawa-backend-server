@@ -226,7 +226,7 @@ def post_popular_meeting_location(db):
     db.commit()
 
     location.create_popular_meeting_location(db, popular_meeting_location_obj)
-    location.get_popular_meeting_location_to_deleted(db, current_time)
+    location.delete_popular_meeting_location(db, current_time)
 
     response = {
         "msg": "인기 있는 장소 최신화 완료",
