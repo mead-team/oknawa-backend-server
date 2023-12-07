@@ -74,7 +74,7 @@ def post_location_point(body, db):
         dict: response 데이터
     """
     TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
-    centroid_point = calculate_centroid(body.dict())
+    centroid_point = calculate_centroid(body.model_dump())
     place_data_in_db = location.get_popular_meeting_location_all(db)
 
     location_data = calculate_distance(centroid_point, place_data_in_db)

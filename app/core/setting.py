@@ -1,3 +1,4 @@
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -17,18 +18,15 @@ class GlobalSettings(BaseSettings):
     REDIS_PORT: str
     REDIS_DATABASE: str
 
-    class Config:
-        env_file = "env/base.env"
+    model_config = ConfigDict(env_file="env/base.env")
 
 
 class DevSettings(GlobalSettings):
-    class Config:
-        env_file = "env/dev.env"
+    model_config = ConfigDict(env_file="env/dev.env")
 
 
 class ProdSettings(GlobalSettings):
-    class Config:
-        env_file = "env/prod.env"
+    model_config = ConfigDict(env_file="env/prod.env")
 
 
 class FactorySettings:
