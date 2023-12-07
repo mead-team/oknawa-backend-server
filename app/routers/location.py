@@ -42,3 +42,12 @@ def get_point_place(
 )
 def post_popular_meeting_location(db: Session = Depends(get_db)):
     return service_location.post_popular_meeting_location(db)
+
+
+@router.get(
+    "/meeting",
+    response_model=res_location.GetPopularMeetingLocation,
+    summary="주요 지하철역 리스트 Redis 최신화",
+)
+def get_popular_meeting_location():
+    return service_location.get_popular_meeting_location()
