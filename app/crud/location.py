@@ -31,7 +31,7 @@ def get_popular_meeting_location_first(db, station_name, location_x, location_y)
     return place_data
 
 
-def get_popular_meeting_location_to_deleted(db, current_time):
+def delete_popular_meeting_location(db, current_time):
     today = datetime.now()
     start_of_today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     place_data = (

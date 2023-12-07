@@ -43,8 +43,8 @@ def api_health_check():
 
 @app.get("/redis-health-check")
 async def redis_health_check():
-    redis_config.set("redis-server_status", "Ok")
-    value = redis_config.get("redis-server_status").decode("utf-8")
+    redis_config.set("redis_server_status", "Ok")
+    value = redis_config.get("redis_server_status").decode("utf-8")
     return {"redis_health_check": f"oknawa-backend-api-server is {value}"}
 
 
