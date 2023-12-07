@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,7 +10,15 @@ from app.core.redis import redis_config
 from app.core.setting import settings
 from app.routers import item, location
 
-app = FastAPI(**swagger_metadata)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"👋 Hello, Run the server in the {settings.APP_ENV} environment")
+    yield
+    print(f"👋 Bye, Shut down the server in the {settings.APP_ENV} environment")
+
+
+app = FastAPI(**swagger_metadata, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,16 +31,6 @@ app.add_middleware(ProcessTimeMiddleware)
 
 app.include_router(location.router)
 app.include_router(item.router)
-
-
-@app.on_event("startup")
-def start():
-    print(f"👋 Hello, Run the server in the {settings.APP_ENV} environment")
-
-
-@app.on_event("shutdown")
-def start():
-    print(f"👋 Bye, Shut down the server in the {settings.APP_ENV} environment")
 
 
 @app.get("/api-health-check")
