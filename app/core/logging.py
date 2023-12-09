@@ -1,10 +1,8 @@
 import logging
 
-from fastapi import Request
-from starlette.types import Message
-
 from fastapi import FastAPI, Request, Response
 from starlette.background import BackgroundTask
+from starlette.types import Message
 
 # logging
 logger = logging.getLogger("main")
@@ -29,7 +27,7 @@ async def set_body(request: Request, body: bytes):
         return {"type": "http.request", "body": body}
 
     request._receive = receive
-    
+
 
 async def logging_temp(request, call_next):
     req_body = await request.body()
@@ -39,11 +37,14 @@ async def logging_temp(request, call_next):
     res_body = b""
     async for chunk in response.body_iterator:
         res_body += chunk
-        
-    if response.headers["content-type"] != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+
+    if (
+        response.headers["content-type"]
+        != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ):
         res_body = res_body.decode("utf-8")
         req_body = req_body.decode("utf-8")
-        
+
     if response.status_code == 200:
         return Response(
             content=res_body,

@@ -4,13 +4,12 @@ from datetime import datetime
 
 import requests
 
-from app.core.redis import redis_config
-from app.core.setting import settings
 from app.core.dependency import get_db
 from app.core.redis import redis_config
+from app.core.setting import settings
+from app.core.util import open_api
 from app.crud import location
 from app.models.location import PopularMeetingLocation
-from app.core.util import open_api
 
 
 def calculate_centroid(body):
@@ -176,11 +175,21 @@ def post_popular_meeting_location():
         redis_config.set("popular_subway", json.dumps(open_api_data))
     else:
         redis_data = json.loads(popular_subway_redis_data.decode("utf-8"))
-        added_data = [data for data in open_api_data if data['subway_name'] not in {item['subway_name'] for item in redis_data}]
-        exists_data = [data for data in redis_data if data["subway_name"] in {item["subway_name"] for item in open_api_data}]
+        added_data = [
+            data
+            for data in open_api_data
+            if data["subway_name"] not in {item["subway_name"] for item in redis_data}
+        ]
+        exists_data = [
+            data
+            for data in redis_data
+            if data["subway_name"] in {item["subway_name"] for item in open_api_data}
+        ]
         redis_config.set("popular_subway", json.dumps(exists_data + added_data))
 
-    popular_subway_in_redis = json.loads(redis_config.get("popular_subway").decode("utf-8"))
+    popular_subway_in_redis = json.loads(
+        redis_config.get("popular_subway").decode("utf-8")
+    )
     subway_name_list = [data["subway_name"] for data in popular_subway_in_redis]
     popular_meeting_location_obj = []
     for subway_name in subway_name_list:

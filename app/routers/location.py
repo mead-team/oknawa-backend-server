@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Path, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, Path
 from sqlalchemy.orm import Session
 
 from app.core.dependency import get_db
@@ -43,11 +43,3 @@ def get_point_place(
 def post_popular_meeting_location(background_tasks: BackgroundTasks):
     background_tasks.add_task(service_location.post_popular_meeting_location)
     return {"msg": "DB Update Trigger"}
-
-@router.get(
-    "/meeting",
-    response_model=res_location.GetPopularMeetingLocation,
-    summary="주요 지하철역 리스트 Redis 최신화",
-)
-def get_popular_meeting_location():
-    return service_location.get_popular_meeting_location()

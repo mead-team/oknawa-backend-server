@@ -22,8 +22,10 @@ def call_open_data_api_popular_subway():
         subway_data = {
             "subway_name": subway_name,
             "total_passenger": total_passenger,
-            "using_date": using_date
+            "using_date": using_date,
         }
         subway_result.append(subway_data)
-    sorted_subway_result = sorted(subway_result, key=lambda x: x["total_passenger"], reverse=True)[:100]
+    sorted_subway_result = sorted(
+        subway_result, key=lambda x: x["total_passenger"], reverse=True
+    )[:100]
     return sorted_subway_result
