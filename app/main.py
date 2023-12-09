@@ -10,7 +10,7 @@ from app.core.middleware import ProcessTimeMiddleware
 from app.core.redis import redis_config
 from app.core.scheduler import scheduler
 from app.core.setting import settings
-from app.routers import item, location
+from app.routers import location
 
 
 @asynccontextmanager
@@ -41,7 +41,6 @@ async def logging_middleware(request: Request, call_next):
 
 
 app.include_router(location.router)
-app.include_router(item.router)
 
 
 @app.get("/api-health-check")
