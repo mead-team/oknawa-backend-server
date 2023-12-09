@@ -2,6 +2,12 @@ from fastapi.testclient import TestClient
 
 
 def test_post_location_meeting(client: TestClient):
+    response = client.get("/location/meeting")
+    content = response.json()
+    assert response.status_code == 200
+
+
+def test_post_location_meeting(client: TestClient):
     response = client.post("/location/meeting")
     content = response.json()
     assert response.status_code == 200
@@ -21,3 +27,11 @@ def test_post_location_point(client: TestClient):
     response = client.post("/location/point", json=login_data)
     content = response.json()
     assert response.status_code == 200
+
+
+def test_get_point_place(client: TestClient):
+    params = {"x": 126.952713197762, "y": 37.4812845080678}
+    for category in ["food", "drink", "cafe"]:
+        response = client.get(f"/location/point/place/{category}", params=params)
+        content = response.json()
+        assert response.status_code == 200
