@@ -34,16 +34,8 @@ class PostPopularMeetingLocation(BaseModel):
     msg: str = Field(title="응답 메시지", description="응답 메시지")
 
 
-class PopularMeetingLocation(BaseModel):
-    subway_name: str = Field(title="지하철역 이름", description="지하철역 이름")
-    total_passenger: float = Field(title="전체 이용 인원", description="전체 이용 인원")
-    using_date: str = Field(title="이용 날짜", description="이용 날짜")
-
-
 class GetPopularMeetingLocation(BaseModel):
-    msg: list[PopularMeetingLocation] = Field(
-        title="주요 지하철역 리스트", description="주요  지하철역 리스트"
-    )
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
 
 
 class GetPointPlace(BaseModel):
