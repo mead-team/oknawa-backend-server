@@ -9,13 +9,16 @@ from app.core.middleware import ProcessTimeMiddleware
 from app.core.redis import redis_config
 from app.core.setting import settings
 from app.routers import item, location
+from app.core.scheduler import scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"👋 Hello, Run the server in the {settings.APP_ENV} environment")
+    scheduler.start()
     yield
     print(f"👋 Bye, Shut down the server in the {settings.APP_ENV} environment")
+    scheduler.shutdown()
 
 
 app = FastAPI(**swagger_metadata, lifespan=lifespan)

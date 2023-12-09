@@ -6,8 +6,11 @@ import requests
 
 from app.core.redis import redis_config
 from app.core.setting import settings
+from app.core.dependency import get_db
+from app.core.redis import redis_config
 from app.crud import location
 from app.models.location import PopularMeetingLocation
+from app.core.util import open_api
 
 
 def calculate_centroid(body):
@@ -160,16 +163,27 @@ def get_point_place(path, query):
     return response
 
 
-def post_popular_meeting_location(db):
+def post_popular_meeting_location():
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    popular_subway_redis_data = json.loads(
-        redis_config.get("popular_subway").decode("utf-8")
-    )
-    popular_subway_name = [data["subway_name"] for data in popular_subway_redis_data]
+    db = next(get_db())
     current_time = datetime.now()
+    print(f"popular meeting location update trigger start : {current_time}")
 
+    open_api_data = open_api.call_open_data_api_popular_subway()
+    popular_subway_redis_data = redis_config.get("popular_subway")
+
+    if popular_subway_redis_data is None:
+        redis_config.set("popular_subway", json.dumps(open_api_data))
+    else:
+        redis_data = json.loads(popular_subway_redis_data.decode("utf-8"))
+        added_data = [data for data in open_api_data if data['subway_name'] not in {item['subway_name'] for item in redis_data}]
+        exists_data = [data for data in redis_data if data["subway_name"] in {item["subway_name"] for item in open_api_data}]
+        redis_config.set("popular_subway", json.dumps(exists_data + added_data))
+
+    popular_subway_in_redis = json.loads(redis_config.get("popular_subway").decode("utf-8"))
+    subway_name_list = [data["subway_name"] for data in popular_subway_in_redis]
     popular_meeting_location_obj = []
-    for subway_name in popular_subway_name:
+    for subway_name in subway_name_list:
         url = "https://dapi.kakao.com/v2/local/search/keyword.json"
         headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
         params = {"query": subway_name}
@@ -195,67 +209,11 @@ def post_popular_meeting_location(db):
                 else:
                     popular_meeting_location_exists_in_db.updated_at = current_time
                 break
-    db.commit()
 
     location.create_popular_meeting_location(db, popular_meeting_location_obj)
     location.delete_popular_meeting_location(db, current_time)
-
     response = {
         "msg": "인기 있는 장소 최신화 완료",
     }
-    return response
-
-
-def get_popular_meeting_location():
-    OPEN_DATA_API_URL = settings.OPEN_DATA_API_URL
-    url = f"{OPEN_DATA_API_URL}/json/CardSubwayStatsNew/1/1000/20231201"
-    api_response = requests.get(url).json().get("CardSubwayStatsNew").get("row")
-
-    api_subway_data = []
-    for data in api_response:
-        line = data["LINE_NUM"]
-        name = data["SUB_STA_NM"]
-        ride_passenger = data["RIDE_PASGR_NUM"]
-        alight_passenger = data["ALIGHT_PASGR_NUM"]
-
-        subway_name = f"{line} {name}"
-        total_passenger = ride_passenger + alight_passenger
-        using_date = data["USE_DT"]
-
-        subway_data = {
-            "subway_name": subway_name,
-            "total_passenger": total_passenger,
-            "using_date": using_date,
-        }
-        api_subway_data.append(subway_data)
-    api_data = sorted(
-        api_subway_data, key=lambda x: x["total_passenger"], reverse=True
-    )[:100]
-
-    popular_subway_redis_data = redis_config.get("popular_subway")
-    if popular_subway_redis_data is None:
-        popular_subway_to_json = json.dumps(api_data)
-        redis_config.set("popular_subway", popular_subway_to_json)
-    else:
-        redis_data = json.loads(popular_subway_redis_data.decode("utf-8"))
-        exists_subway_data = [
-            data
-            for data in redis_data
-            if data["subway_name"] in {item["subway_name"] for item in api_data}
-        ]
-        added_subway_data = [
-            data
-            for data in api_data
-            if data["subway_name"] not in {item["subway_name"] for item in redis_data}
-        ]
-        popular_subway_to_json = json.dumps(exists_subway_data + added_subway_data)
-        redis_config.set("popular_subway", popular_subway_to_json)
-
-    popular_meeting_location_result = json.loads(
-        redis_config.get("popular_subway").decode("utf-8")
-    )
-
-    response = {
-        "msg": popular_meeting_location_result,
-    }
+    print(f"popular meeting location update trigger done : {current_time}")
     return response
