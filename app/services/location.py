@@ -1,11 +1,11 @@
-import math
 import json
+import math
 from datetime import datetime
 
 import requests
 
-from app.core.setting import settings
 from app.core.redis import redis_config
+from app.core.setting import settings
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -113,7 +113,20 @@ def post_location_point(body, db):
                     result["metaData"]["plan"]["itineraries"],
                     key=lambda x: x["totalTime"],
                 )
+            total_polyline = list()
+            for leg in itinerary.pop("legs"):
+                if "passShape" in leg.keys():
+                    linestrings = leg.pop("passShape").pop("linestring")
+                else:
+                    linestrings = " ".join(
+                        [step.pop("linestring") for step in leg.pop("steps")]
+                    )
+                linestrings = linestrings.split(" ")
 
+                for linestring in linestrings:
+                    lng, lat = [float(line) for line in linestring.split(",")]
+                    total_polyline.append(dict(lng=lng, lat=lat))
+            itinerary["total_polyline"] = total_polyline
             itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
         else:
             # Failed request
@@ -134,7 +147,7 @@ def get_point_place(path, query):
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
 
-    query = query.dict()
+    query = query.model_dump()
     if path == "food":
         query.update(category_group_code="FD6", query="음식점")
     elif path == "drink":
@@ -149,7 +162,9 @@ def get_point_place(path, query):
 
 def post_popular_meeting_location(db):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    popular_subway_redis_data = json.loads(redis_config.get("popular_subway").decode("utf-8"))
+    popular_subway_redis_data = json.loads(
+        redis_config.get("popular_subway").decode("utf-8")
+    )
     popular_subway_name = [data["subway_name"] for data in popular_subway_redis_data]
     current_time = datetime.now()
 
@@ -210,10 +225,12 @@ def get_popular_meeting_location():
         subway_data = {
             "subway_name": subway_name,
             "total_passenger": total_passenger,
-            "using_date": using_date
+            "using_date": using_date,
         }
         api_subway_data.append(subway_data)
-    api_data = sorted(api_subway_data, key=lambda x: x["total_passenger"], reverse=True)[:100]
+    api_data = sorted(
+        api_subway_data, key=lambda x: x["total_passenger"], reverse=True
+    )[:100]
 
     popular_subway_redis_data = redis_config.get("popular_subway")
     if popular_subway_redis_data is None:
@@ -221,12 +238,22 @@ def get_popular_meeting_location():
         redis_config.set("popular_subway", popular_subway_to_json)
     else:
         redis_data = json.loads(popular_subway_redis_data.decode("utf-8"))
-        exists_subway_data = [data for data in redis_data if data["subway_name"] in {item["subway_name"] for item in api_data}]
-        added_subway_data = [data for data in api_data if data['subway_name'] not in {item['subway_name'] for item in redis_data}]
+        exists_subway_data = [
+            data
+            for data in redis_data
+            if data["subway_name"] in {item["subway_name"] for item in api_data}
+        ]
+        added_subway_data = [
+            data
+            for data in api_data
+            if data["subway_name"] not in {item["subway_name"] for item in redis_data}
+        ]
         popular_subway_to_json = json.dumps(exists_subway_data + added_subway_data)
         redis_config.set("popular_subway", popular_subway_to_json)
 
-    popular_meeting_location_result = json.loads(redis_config.get("popular_subway").decode("utf-8"))
+    popular_meeting_location_result = json.loads(
+        redis_config.get("popular_subway").decode("utf-8")
+    )
 
     response = {
         "msg": popular_meeting_location_result,

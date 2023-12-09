@@ -41,7 +41,9 @@ class PopularMeetingLocation(BaseModel):
 
 
 class GetPopularMeetingLocation(BaseModel):
-    msg: list[PopularMeetingLocation] = Field(title="주요 지하철역 리스트", description="주요  지하철역 리스트")
+    msg: list[PopularMeetingLocation] = Field(
+        title="주요 지하철역 리스트", description="주요  지하철역 리스트"
+    )
 
 
 class GetPointPlace(BaseModel):
