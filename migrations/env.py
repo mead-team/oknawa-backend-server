@@ -5,7 +5,6 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.database import Base
 from app.core.setting import settings
-from app.models.item import *
 from app.models.location import *
 
 POSTGRES_USER = settings.POSTGRES_USER
