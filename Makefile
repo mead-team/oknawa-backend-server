@@ -23,7 +23,7 @@ app-log:
 	docker-compose logs -f app
 
 app-test:
-	docker-compose exec app pytest --cov
+	docker-compose exec app pytest --cov-report term-missing --cov --ignore temp
 
 db-migrate:
 	docker-compose exec app alembic revision --autogenerate -m "${MSG}"
