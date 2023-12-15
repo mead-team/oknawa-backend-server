@@ -43,5 +43,5 @@ async def logging_print(request: Request, call_next):
     if response.status_code != 200:
         req_body = await get_body(request)
         res_body = (b"".join(response_body)).decode()
-        log_error(response.status_code, req_body.decode(), res_body)
+        log_error(req_body.decode(), res_body)
     return response

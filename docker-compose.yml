@@ -16,6 +16,43 @@ services:
       - env/base.env
     networks:
       - oknawa-network
+    labels:
+      - traefik.http.routers.fastapi.entrypoints=websecure
+      - traefik.http.routers.fastapi.rule=Host(`oknawa-api.traefik.me`)
+      - traefik.http.routers.fastapi.tls=true
+      - traefik.http.routers.fastapi.tls.certresolver=letsencrypt
+  
+  traefik:
+    container_name: traefik
+    image: traefik:v2.10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./letsencrypt/:/letsencrypt/
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - oknawa-network
+    command:
+      - "--api"
+      - "--providers.docker"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"      
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=oknawa.team@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    labels:
+      # Dashboard
+      - "traefik.http.routers.traefik.rule=Host(`oknawa-traefik.traefik.me`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=admin"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.middlewares.admin.basicauth.users=oknawa:$$2y$$05$$fENis8jcv/Y9Cij4CC4hheSsi/hqzWKCPm2aMAy4bJcurVOpwSE0W"
 
   db:
     container_name: oknawa_db
