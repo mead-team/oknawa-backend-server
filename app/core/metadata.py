@@ -6,5 +6,5 @@ swagger_metadata = dict(
         "name": "Mead-Team Organization",
         "url": "https://github.com/mead-team",
     },
-    openapi_url="/api/v1/openapi.json",
+    # openapi_url="/api/v1/openapi.json",
 )

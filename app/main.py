@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.logging import logging_temp
+from app.core.logging import logging_print
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
 from app.core.redis import redis_config
@@ -36,8 +36,7 @@ app.add_middleware(ProcessTimeMiddleware)
 
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next):
-    response = await logging_temp(request, call_next)
-    return response
+    return await logging_print(request, call_next)
 
 
 app.include_router(location.router)
