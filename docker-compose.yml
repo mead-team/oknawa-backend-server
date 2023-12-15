@@ -7,8 +7,8 @@ services:
     command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./:/usr/src/app
-    ports:
-      - 8000:8000
+    expose:
+      - "8000"
     depends_on:
       - db
       - redis
@@ -18,7 +18,7 @@ services:
       - oknawa-network
     labels:
       - traefik.http.routers.fastapi.entrypoints=websecure
-      - traefik.http.routers.fastapi.rule=Host(`oknawa-api.traefik.me`)
+      - traefik.http.routers.fastapi.rule=Host(`oknawa-api.ec2-ip.traefik.me`)
       - traefik.http.routers.fastapi.tls=true
       - traefik.http.routers.fastapi.tls.certresolver=letsencrypt
   
@@ -47,7 +47,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     labels:
       # Dashboard
-      - "traefik.http.routers.traefik.rule=Host(`oknawa-traefik.traefik.me`)"
+      - "traefik.http.routers.traefik.rule=Host(`oknawa-traefik.ec2-ip.traefik.me`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.middlewares=admin"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
