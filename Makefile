@@ -1,6 +1,9 @@
 app-build:
 	docker-compose build
 
+local-app-up:
+	docker-compose -f docker-compose.dev.yml up -d
+
 app-up:
 	docker-compose up -d
 

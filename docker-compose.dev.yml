@@ -18,7 +18,7 @@ services:
       - oknawa-network
     labels:
       - traefik.http.routers.fastapi.entrypoints=websecure
-      - traefik.http.routers.fastapi.rule=Host(`api.oknawa.com`)
+      - traefik.http.routers.fastapi.rule=Host(`api-127-0-0-1.traefik.me`)
       - traefik.http.routers.fastapi.tls=true
       - traefik.http.routers.fastapi.tls.certresolver=letsencrypt
   
@@ -39,7 +39,7 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true"     
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
@@ -47,7 +47,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     labels:
       # Dashboard
-      - traefik.http.routers.traefik.rule=Host(`traefik.oknawa.com`)
+      - traefik.http.routers.traefik.rule=Host(`traefik-127-0-0-1.traefik.me`)
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.middlewares=admin
       - traefik.http.routers.traefik.tls.certresolver=letsencrypt
