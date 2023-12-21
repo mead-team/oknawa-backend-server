@@ -1,4 +1,5 @@
 import json
+import uuid
 import math
 from datetime import datetime
 
@@ -139,8 +140,11 @@ def post_location_point(body, db):
         "address_name": address_name,
         "end_x": end_x,
         "end_y": end_y,
+        "share_key": str(uuid.uuid4()),
         "itinerary": itinerary_list,
     }
+    redis_config.set(response.get("share_key"), json.dumps(response))
+
     return response
 
 

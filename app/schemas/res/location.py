@@ -27,6 +27,7 @@ class PostLocationPoint(BaseModel):
     address_name: str = Field(title="도로명 주소", description="도로명 주소")
     end_x: float = Field(title="x좌표", description="x좌표")
     end_y: float = Field(title="y좌표", description="y좌표")
+    share_key: str = Field(title="공유 param key", description="공유 param key")
     itinerary: list
 
 
