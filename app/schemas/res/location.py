@@ -31,6 +31,10 @@ class PostLocationPoint(BaseModel):
     itinerary: list
 
 
+class GetLocationPoint(PostLocationPoint):
+    pass
+
+
 class PostPopularMeetingLocation(BaseModel):
     msg: str = Field(title="응답 메시지", description="응답 메시지")
 

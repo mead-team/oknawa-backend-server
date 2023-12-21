@@ -20,3 +20,7 @@ class GetPointPlace(BaseModel):
     page: int = Field(1, title="범위 (미터)", description="범위")
     size: int = Field(15, title="범위 (미터)", description="범위")
     sort: str = Field("accuracy", title="범위 (미터)", description="범위")
+
+
+class GetLocationPoint(BaseModel):
+    share_key: str = Field(title="공유 param key", description="공유 param key")

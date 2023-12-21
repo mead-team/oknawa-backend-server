@@ -2,6 +2,7 @@ import json
 import uuid
 import math
 from datetime import datetime
+from fastapi import HTTPException
 
 import requests
 
@@ -146,6 +147,17 @@ def post_location_point(body, db):
     redis_config.set(response.get("share_key"), json.dumps(response))
 
     return response
+
+
+def get_location_point(query):
+    share_key = query.share_key
+    share_key_exists_in_redis = redis_config.get(share_key)
+
+    if share_key_exists_in_redis is None:
+        raise HTTPException(status_code=404, detail="Not Found")
+    else:
+        response = json.loads(share_key_exists_in_redis.decode("utf-8"))
+        return response
 
 
 def get_point_place(path, query):

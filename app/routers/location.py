@@ -24,6 +24,17 @@ def post_location_point(
 
 
 @router.get(
+    "/point",
+    response_model=res_location.GetLocationPoint,
+    summary="share key를 이용한 사용자들간의 중간지점역 찾기",
+)
+def get_location_point(
+    query: req_location.GetLocationPoint = Depends(),
+):
+    return service_location.get_location_point(query)
+
+
+@router.get(
     "/point/place/{category}",
     response_model=res_location.GetPointPlace,
     summary="중간지점역의 핫플레이스(만날장소) 리스트",
