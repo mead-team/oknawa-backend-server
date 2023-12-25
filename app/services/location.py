@@ -1,67 +1,17 @@
 import json
 import uuid
-import math
 from datetime import datetime
-from fastapi import HTTPException
+from urllib.parse import quote
 
 import requests
+from fastapi import HTTPException
 
 from app.core.dependency import get_db
 from app.core.redis import redis_config
 from app.core.setting import settings
-from app.core.util import open_api
+from app.core.util import distance_calculator, open_api, route_util
 from app.crud import location
 from app.models.location import PopularMeetingLocation
-
-
-def calculate_centroid(body):
-    """n개의 좌표의 중간지점 계산, 각 연속된 2D(Dimension) 좌표의 평균을 계산
-
-    Args:
-        body (obj): /point의 request로 받은 유저별 좌표
-
-    Returns:
-        tuple: (중간지점x좌표, 중간지점y좌표)
-    """
-    centroid_x = 0
-    centroid_y = 0
-    participant = body.get("participant")
-
-    for vertex in participant:
-        x, y = vertex.get("start_x"), vertex.get("start_y")
-        centroid_x += x
-        centroid_y += y
-    centroid_x /= len(participant)
-    centroid_y /= len(participant)
-    centroid_point = (centroid_x, centroid_y)
-
-    return centroid_point
-
-
-def calculate_distance(centroid_point, place_data_in_db):
-    """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역 리턴
-
-    Args:
-        centroid_point (tuple): (중간지점x좌표, 중간지점y좌표)
-        place_list (list): temp_point_location의 target dict의 values()
-
-    Returns:
-        dict: place_list의 요소 중간지점좌표와 가장가까운 역
-    """
-    centroid_x, centroid_y = centroid_point
-    largest_distance = float("inf")
-    location_data = None
-
-    for place in place_data_in_db:
-        place_point_x = float(place.location_x)
-        place_point_y = float(place.location_y)
-        current_distance = math.sqrt(
-            (centroid_x - place_point_x) ** 2 + (centroid_y - place_point_y) ** 2
-        )
-        if current_distance < largest_distance:
-            largest_distance = current_distance
-            location_data = place
-    return location_data
 
 
 def post_location_point(body, db):
@@ -79,62 +29,90 @@ def post_location_point(body, db):
     Returns:
         dict: response 데이터
     """
-    TMAP_REST_API_KEY = settings.TMAP_REST_API_KEY
-    centroid_point = calculate_centroid(body.model_dump())
+    centroid_point = distance_calculator.calculate_centroid(body.model_dump())
     place_data_in_db = location.get_popular_meeting_location_all(db)
+    location_data = distance_calculator.calculate_distance(
+        centroid_point, place_data_in_db
+    )
 
-    location_data = calculate_distance(centroid_point, place_data_in_db)
     station_name = location_data.name
     address_name = location_data.address
     end_x = location_data.location_x
     end_y = location_data.location_y
 
     # Tmap
-    url = "https://apis.openapi.sk.com/transit/routes"
-    headers = {"appKey": f"{TMAP_REST_API_KEY}"}
+    transit_url = "https://apis.openapi.sk.com/transit/routes"
+    headers = {"appKey": f"{settings.TMAP_REST_API_KEY}"}
 
-    itinerary_list = list()
+    itinerary_list = []
     for participant in body.participant:
-        start_x, start_y = float(participant.start_x), float(participant.start_y)
-        response = requests.post(
-            url,
+        source_and_target = dict(
+            startX=participant.start_x,
+            startY=participant.start_y,
+            endX=end_x,
+            endY=end_y,
+        )
+        transit_response = requests.post(
+            transit_url,
             headers=headers,
-            json=dict(startX=start_x, startY=start_y, endX=end_x, endY=end_y),
+            json=source_and_target,
         )
 
-        if response.status_code == 200:
-            result = response.json()
-            subway_list = list(
-                filter(
-                    lambda x: x["pathType"] == 1,
-                    result["metaData"]["plan"]["itineraries"],
-                )
-            )
-            if subway_list:
-                itinerary = min(subway_list, key=lambda x: x["totalTime"])
+        if transit_response.status_code == 200:
+            transit_response_json = transit_response.json()
+            if transit_response_json.get("metaData"):
+                itinerary = route_util.extract_itinerary_list(transit_response_json)
+                total_polyline = route_util.extract_polyline(itinerary)
+                itinerary.update(total_polyline=total_polyline)
+                itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
             else:
-                itinerary = min(
-                    result["metaData"]["plan"]["itineraries"],
-                    key=lambda x: x["totalTime"],
-                )
-            total_polyline = list()
-            for leg in itinerary.pop("legs"):
-                if "passShape" in leg.keys():
-                    linestrings = leg.pop("passShape").pop("linestring")
-                else:
-                    linestrings = " ".join(
-                        [step.pop("linestring") for step in leg.pop("steps")]
+                if transit_response_json.get("result", {}).get("status") == 11:
+                    # 거리가 너무 가까운경우
+                    pedestrian_url = (
+                        "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1"
                     )
-                linestrings = linestrings.split(" ")
-
-                for linestring in linestrings:
-                    lng, lat = [float(line) for line in linestring.split(",")]
-                    total_polyline.append(dict(lng=lng, lat=lat))
-            itinerary["total_polyline"] = total_polyline
-            itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
+                    start_name = quote(participant.name, encoding="utf-8")
+                    end_name = quote(location_data.name, encoding="utf-8")
+                    source_and_target.update(startName=start_name, endName=end_name)
+                    pedestrian_response = requests.post(
+                        pedestrian_url,
+                        headers=headers,
+                        json=source_and_target,
+                    )
+                    pedestrian_response_json = pedestrian_response.json()
+                    if pedestrian_response.status_code == 200:
+                        itinerary = {}
+                        total_polyline = []
+                        features = pedestrian_response_json.get("features")
+                        for feature in features:
+                            properties = feature.get("properties")
+                            if properties.get("pointType") == "SP":
+                                itinerary.update(totalTime=properties.get("totalTime"))
+                                lng, lat = feature.get("geometry").get("coordinates")
+                                total_polyline.append({"lng": lng, "lat": lat})
+                            if not properties.get("pointType"):
+                                coordinates = feature.get("geometry").get("coordinates")
+                                for coordinate in coordinates[1:]:
+                                    lng, lat = coordinate
+                                    total_polyline.append({"lng": lng, "lat": lat})
+                        itinerary.update(total_polyline=total_polyline)
+                        itinerary_list.append(
+                            dict(name=participant.name, itinerary=itinerary)
+                        )
+                    else:
+                        raise HTTPException(
+                            status_code=response.status_code,
+                            detail=transit_response_json,
+                        )
+                else:
+                    # tmap 에러메시지일 경우
+                    raise HTTPException(
+                        status_code=response.status_code, detail=transit_response_json
+                    )
         else:
-            # Failed request
-            print(f"Error: {response.status_code}, {response.text}")
+            raise HTTPException(
+                status_code=response.status_code, detail=transit_response_json
+            )
 
     response = {
         "station_name": station_name,
