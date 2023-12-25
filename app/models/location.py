@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
 
 from app.core.database import Base
 from app.models.base import Timestamp
@@ -13,5 +13,5 @@ class PopularMeetingLocation(Timestamp, Base):
     type = Column(String, nullable=False, comment="위치 타입")
     url = Column(String, nullable=False, comment="위치 url")
     address = Column(String, nullable=False, comment="위치 주소")
-    location_x = Column(String, nullable=False, comment="x좌표")
-    location_y = Column(String, nullable=False, comment="y좌표")
+    location_x = Column(Float, nullable=False, comment="x좌표")
+    location_y = Column(Float, nullable=False, comment="y좌표")
