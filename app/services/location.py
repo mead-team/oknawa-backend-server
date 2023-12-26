@@ -101,17 +101,17 @@ def post_location_point(body, db):
                         )
                     else:
                         raise HTTPException(
-                            status_code=response.status_code,
-                            detail=transit_response_json,
+                            status_code=pedestrian_response.status_code,
+                            detail=pedestrian_response_json,
                         )
                 else:
                     # tmap 에러메시지일 경우
                     raise HTTPException(
-                        status_code=response.status_code, detail=transit_response_json
+                        status_code=transit_response.status_code, detail=transit_response_json
                     )
         else:
             raise HTTPException(
-                status_code=response.status_code, detail=transit_response_json
+                status_code=transit_response.status_code, detail=transit_response_json
             )
 
     response = {
