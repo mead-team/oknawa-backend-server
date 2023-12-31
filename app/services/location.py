@@ -7,8 +7,6 @@ import aiohttp
 import requests
 from fastapi import HTTPException
 
-from app.core.dependency import get_db
-from app.core.redis import get_redis
 from app.core.setting import settings
 from app.core.util import aiohttp_util, distance_calculator, open_api
 from app.crud import location
@@ -99,10 +97,8 @@ async def get_point_place(path, query):
     return response
 
 
-def post_popular_meeting_location():
+def post_popular_meeting_location(db, redis_client):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    db = next(get_db())
-    redis_client = get_redis()
     current_time = datetime.now()
     print(f"popular meeting location update trigger start : {current_time}")
 

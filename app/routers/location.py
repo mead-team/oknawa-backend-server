@@ -1,6 +1,6 @@
-import redis
 from typing import Literal
 
+import redis
 from fastapi import APIRouter, BackgroundTasks, Depends, Path
 from sqlalchemy.orm import Session
 
@@ -58,7 +58,11 @@ async def get_point_place(
     summary="주요 지하철역 리스트 DB 최신화",
 )
 def post_popular_meeting_location(
-        background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    redis_client: redis.StrictRedis = Depends(get_redis),
 ):
-    background_tasks.add_task(service_location.post_popular_meeting_location)
+    background_tasks.add_task(
+        service_location.post_popular_meeting_location, db, redis_client
+    )
     return {"msg": "DB Update Trigger"}
