@@ -1,13 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from redis import Redis
 
+from app.core.dependency import get_redis
 from app.core.logging import logging_print
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
-from app.core.redis import redis_config
 from app.core.scheduler import scheduler
 from app.core.setting import settings
 from app.routers import location
@@ -51,9 +52,9 @@ def api_health_check():
 
 
 @app.get("/redis-health-check")
-async def redis_health_check():
-    redis_config.set("redis_server_status", "Ok")
-    value = redis_config.get("redis_server_status").decode("utf-8")
+async def redis_health_check(redis: Redis = Depends(get_redis)):
+    redis.set("redis_server_status", "Ok")
+    value = redis.get("redis_server_status").decode("utf-8")
     return {"redis_health_check": f"oknawa-backend-api-server is {value}"}
 
 
