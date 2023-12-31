@@ -19,7 +19,7 @@ class GetPointPlace(BaseModel):
     y: float = Field(title="인기있는역 y좌표", description="y좌표")
     radius: int = Field(500, title="범위 (미터)", description="범위")
     page: int = Field(1, title="범위 (미터)", description="범위")
-    size: int = Field(15, title="범위 (미터)", description="범위")
+    size: int = Field(5, title="범위 (미터)", description="범위")
     sort: str = Field("accuracy", title="범위 (미터)", description="범위")
 
 
