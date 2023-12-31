@@ -18,6 +18,7 @@ class GlobalSettings(BaseSettings):
     REDIS_PORT: str
     REDIS_DATABASE: str
     OPEN_DATA_API_URL: str
+    TMAP_API_URL: str
 
     model_config = ConfigDict(env_file="env/base.env")
 
