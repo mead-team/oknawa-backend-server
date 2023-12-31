@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class Participant(BaseModel):
     name: str = Field(title="참여자 이름", description="참여자 이름")
+    region_name: str = Field(title="참여자 주소", description="참여자 주소")
     start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")
     start_y: float = Field(title="참여자 시작 y좌표", description="y좌표")
 

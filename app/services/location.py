@@ -64,7 +64,7 @@ def post_location_point(body, db):
                 itinerary = route_util.extract_itinerary_list(transit_response_json)
                 total_polyline = route_util.extract_polyline(itinerary)
                 itinerary.update(total_polyline=total_polyline)
-                itinerary_list.append(dict(name=participant.name, itinerary=itinerary))
+                itinerary_list.append(dict(name=participant.name, region_name=participant.region_name, itinerary=itinerary))
             else:
                 if transit_response_json.get("result", {}).get("status") == 11:
                     # 거리가 너무 가까운경우
@@ -97,7 +97,7 @@ def post_location_point(body, db):
                                     total_polyline.append({"lng": lng, "lat": lat})
                         itinerary.update(total_polyline=total_polyline)
                         itinerary_list.append(
-                            dict(name=participant.name, itinerary=itinerary)
+                            dict(name=participant.name, region_name=participant.region_name, itinerary=itinerary)
                         )
                     else:
                         raise HTTPException(
