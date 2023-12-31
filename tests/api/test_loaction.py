@@ -16,9 +16,15 @@ def test_post_location_meeting(client: TestClient):
 def test_post_location_point(client: TestClient):
     login_data = {
         "participant": [
-            {"name": "김XX", "start_x": 126.882661758356, "start_y": 37.4803959660982},
+            {
+                "name": "김XX", 
+                "region_name": "송파구", 
+                "start_x": 126.882661758356, 
+                "start_y": 37.4803959660982
+            },
             {
                 "name": "장XX",
+                "region_name": "송파구",
                 "start_x": 127.02800140627488,
                 "start_y": 37.49808633653005,
             },
