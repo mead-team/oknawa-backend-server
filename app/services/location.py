@@ -13,7 +13,7 @@ from app.crud import location
 from app.models.location import PopularMeetingLocation
 
 
-def post_location_point(body, db, redis_client):
+def post_location_point(body, db, redis):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
@@ -25,7 +25,7 @@ def post_location_point(body, db, redis_client):
     Args:
         body (obj): /point의 request로 받은 유저별 좌표
         db: get_db
-        redis_client: get_redis
+        redis: get_redis
 
     Returns:
         dict: response 데이터
@@ -47,14 +47,14 @@ def post_location_point(body, db, redis_client):
         "share_key": str(uuid.uuid4()),
         "itinerary": participant_itinerary,
     }
-    redis_client.set(response.get("share_key"), json.dumps(response))
+    redis.set(response.get("share_key"), json.dumps(response))
 
     return response
 
 
-def get_location_point(query, redis_client):
+def get_location_point(query, redis):
     share_key = query.share_key
-    share_key_exists_in_redis = redis_client.get(share_key)
+    share_key_exists_in_redis = redis.get(share_key)
 
     if share_key_exists_in_redis is None:
         raise HTTPException(status_code=404, detail="Not Found")
@@ -97,16 +97,16 @@ async def get_point_place(path, query):
     return response
 
 
-def post_popular_meeting_location(db, redis_client):
+def post_popular_meeting_location(db, redis):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
     current_time = datetime.now()
     print(f"popular meeting location update trigger start : {current_time}")
 
     open_api_data = open_api.call_open_data_api_popular_subway()
-    popular_subway_redis_data = redis_client.get("popular_subway")
+    popular_subway_redis_data = redis.get("popular_subway")
 
     if popular_subway_redis_data is None:
-        redis_client.set("popular_subway", json.dumps(open_api_data))
+        redis.set("popular_subway", json.dumps(open_api_data))
     else:
         redis_data = json.loads(popular_subway_redis_data.decode("utf-8"))
         added_data = [
@@ -119,11 +119,9 @@ def post_popular_meeting_location(db, redis_client):
             for data in redis_data
             if data["subway_name"] in {item["subway_name"] for item in open_api_data}
         ]
-        redis_client.set("popular_subway", json.dumps(exists_data + added_data))
+        redis.set("popular_subway", json.dumps(exists_data + added_data))
 
-    popular_subway_in_redis = json.loads(
-        redis_client.get("popular_subway").decode("utf-8")
-    )
+    popular_subway_in_redis = json.loads(redis.get("popular_subway").decode("utf-8"))
     subway_name_list = [data["subway_name"] for data in popular_subway_in_redis]
     popular_meeting_location_obj = []
     for subway_name in subway_name_list:

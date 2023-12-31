@@ -1,6 +1,6 @@
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, redis_config
 
 
 def get_db():
@@ -15,3 +15,7 @@ def get_db():
         raise e
     finally:
         db.close()
+
+
+def get_redis():
+    return redis_config

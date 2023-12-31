@@ -1,11 +1,10 @@
 from typing import Literal
 
-import redis
 from fastapi import APIRouter, BackgroundTasks, Depends, Path
+from redis import Redis
 from sqlalchemy.orm import Session
 
-from app.core.dependency import get_db
-from app.core.redis import get_redis
+from app.core.dependency import get_db, get_redis
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
@@ -22,9 +21,9 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
 def post_location_point(
     body: req_location.PostLocationPoint,
     db: Session = Depends(get_db),
-    redis_client: redis.StrictRedis = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_location_point(body, db, redis_client)
+    return service_location.post_location_point(body, db, redis)
 
 
 @router.get(
@@ -34,9 +33,9 @@ def post_location_point(
 )
 def get_location_point(
     query: req_location.GetLocationPoint = Depends(),
-    redis_client: redis.StrictRedis = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ):
-    return service_location.get_location_point(query, redis_client)
+    return service_location.get_location_point(query, redis)
 
 
 @router.get(
@@ -60,9 +59,7 @@ async def get_point_place(
 def post_popular_meeting_location(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    redis_client: redis.StrictRedis = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ):
-    background_tasks.add_task(
-        service_location.post_popular_meeting_location, db, redis_client
-    )
+    background_tasks.add_task(service_location.post_popular_meeting_location, db, redis)
     return {"msg": "DB Update Trigger"}

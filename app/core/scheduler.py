@@ -1,8 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.core.dependency import get_db
-from app.core.redis import get_redis
+from app.core.dependency import get_db, get_redis
 from app.services import location
 
 scheduler = BackgroundScheduler()
