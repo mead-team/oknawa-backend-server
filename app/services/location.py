@@ -1,7 +1,6 @@
 import json
 import uuid
 from datetime import datetime
-from urllib.parse import quote
 
 import requests
 from fastapi import HTTPException
@@ -9,7 +8,7 @@ from fastapi import HTTPException
 from app.core.dependency import get_db
 from app.core.redis import redis_config
 from app.core.setting import settings
-from app.core.util import distance_calculator, open_api, route_util
+from app.core.util import distance_calculator, open_api
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -25,102 +24,27 @@ def post_location_point(body, db):
 
     Args:
         body (obj): /point의 request로 받은 유저별 좌표
+        db: get_db
 
     Returns:
         dict: response 데이터
     """
-    centroid_point = distance_calculator.calculate_centroid(body.model_dump())
-    place_data_in_db = location.get_popular_meeting_location_all(db)
-    location_data = distance_calculator.calculate_distance(
-        centroid_point, place_data_in_db
+    popular_location_in_db = location.get_popular_meeting_location_all(db)
+    center_coordinates = distance_calculator.get_center_coordinates(body.model_dump())
+    center_location_data = distance_calculator.get_center_location(
+        center_coordinates, popular_location_in_db
+    )
+    participant_itinerary = open_api.call_tmap_api_participant_itinerary(
+        body, center_location_data
     )
 
-    station_name = location_data.name
-    address_name = location_data.address
-    end_x = location_data.location_x
-    end_y = location_data.location_y
-
-    # Tmap
-    transit_url = "https://apis.openapi.sk.com/transit/routes"
-    headers = {"appKey": f"{settings.TMAP_REST_API_KEY}"}
-
-    itinerary_list = []
-    for participant in body.participant:
-        source_and_target = dict(
-            startX=participant.start_x,
-            startY=participant.start_y,
-            endX=end_x,
-            endY=end_y,
-        )
-        transit_response = requests.post(
-            transit_url,
-            headers=headers,
-            json=source_and_target,
-        )
-
-        if transit_response.status_code == 200:
-            transit_response_json = transit_response.json()
-            if transit_response_json.get("metaData"):
-                itinerary = route_util.extract_itinerary_list(transit_response_json)
-                total_polyline = route_util.extract_polyline(itinerary)
-                itinerary.update(total_polyline=total_polyline)
-                itinerary_list.append(dict(name=participant.name, region_name=participant.region_name, itinerary=itinerary))
-            else:
-                if transit_response_json.get("result", {}).get("status") == 11:
-                    # 거리가 너무 가까운경우
-                    pedestrian_url = (
-                        "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1"
-                    )
-                    start_name = quote(participant.name, encoding="utf-8")
-                    end_name = quote(location_data.name, encoding="utf-8")
-                    source_and_target.update(startName=start_name, endName=end_name)
-                    pedestrian_response = requests.post(
-                        pedestrian_url,
-                        headers=headers,
-                        json=source_and_target,
-                    )
-                    pedestrian_response_json = pedestrian_response.json()
-                    if pedestrian_response.status_code == 200:
-                        itinerary = {}
-                        total_polyline = []
-                        features = pedestrian_response_json.get("features")
-                        for feature in features:
-                            properties = feature.get("properties")
-                            if properties.get("pointType") == "SP":
-                                itinerary.update(totalTime=properties.get("totalTime"))
-                                lng, lat = feature.get("geometry").get("coordinates")
-                                total_polyline.append({"lng": lng, "lat": lat})
-                            if not properties.get("pointType"):
-                                coordinates = feature.get("geometry").get("coordinates")
-                                for coordinate in coordinates[1:]:
-                                    lng, lat = coordinate
-                                    total_polyline.append({"lng": lng, "lat": lat})
-                        itinerary.update(total_polyline=total_polyline)
-                        itinerary_list.append(
-                            dict(name=participant.name, region_name=participant.region_name, itinerary=itinerary)
-                        )
-                    else:
-                        raise HTTPException(
-                            status_code=pedestrian_response.status_code,
-                            detail=pedestrian_response.json(),
-                        )
-                else:
-                    # tmap 에러메시지일 경우
-                    raise HTTPException(
-                        status_code=transit_response.status_code, detail=transit_response.json()
-                    )
-        else:
-            raise HTTPException(
-                status_code=transit_response.status_code, detail=transit_response.json()
-            )
-
     response = {
-        "station_name": station_name,
-        "address_name": address_name,
-        "end_x": end_x,
-        "end_y": end_y,
+        "station_name": center_location_data.name,
+        "address_name": center_location_data.address,
+        "end_x": center_location_data.location_x,
+        "end_y": center_location_data.location_y,
         "share_key": str(uuid.uuid4()),
-        "itinerary": itinerary_list,
+        "itinerary": participant_itinerary,
     }
     redis_config.set(response.get("share_key"), json.dumps(response))
 
