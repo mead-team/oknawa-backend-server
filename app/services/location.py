@@ -1,14 +1,16 @@
+import asyncio
 import json
 import uuid
 from datetime import datetime
 
+import aiohttp
 import requests
 from fastapi import HTTPException
 
 from app.core.dependency import get_db
 from app.core.redis import redis_config
 from app.core.setting import settings
-from app.core.util import distance_calculator, open_api
+from app.core.util import aiohttp_util, distance_calculator, open_api
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -62,7 +64,7 @@ def get_location_point(query):
         return response
 
 
-def get_point_place(path, query):
+async def get_point_place(path, query):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
@@ -75,8 +77,24 @@ def get_point_place(path, query):
     elif path == "cafe":
         query.update(category_group_code="CE7", query="카페")
 
-    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
-    response = requests.get(url, headers=headers, params=query).json()
+    async with aiohttp.ClientSession() as session:
+        response = await aiohttp_util.fetch(url, session, headers, query)
+
+        tasks = []
+        for document in response.get("documents"):
+            place_url = document.get("place_url")
+            place_url_id = place_url.split("/")[-1]
+            replace_suburl = f"main/v/{place_url_id}"
+            place_api_url = place_url.replace(place_url_id, replace_suburl)
+            tasks.append(aiohttp_util.get_place_info(place_api_url))
+
+        api_responses = await asyncio.gather(*tasks)
+
+        for document, api_response in zip(response.get("documents"), api_responses):
+            api_basic_info = api_response.get("basicInfo")
+            document.update(main_photo_url=api_basic_info.get("mainphotourl"))
+            document.update(open_hour=api_basic_info.get("openHour"))
+
     return response
 
 

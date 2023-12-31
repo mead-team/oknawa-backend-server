@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field
 
 
 class Hotplace(BaseModel):
@@ -14,6 +14,8 @@ class Hotplace(BaseModel):
     road_address_name: str
     x: str
     y: str
+    main_photo_url: AnyUrl | None
+    open_hour: dict | None
 
 
 class Meta(BaseModel):

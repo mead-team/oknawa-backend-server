@@ -39,11 +39,12 @@ def get_location_point(
     response_model=res_location.GetPointPlace,
     summary="중간지점역의 핫플레이스(만날장소) 리스트",
 )
-def get_point_place(
+async def get_point_place(
     category: Literal["food", "cafe", "drink"] = Path(),
     query: req_location.GetPointPlace = Depends(),
 ):
-    return service_location.get_point_place(category, query)
+    response = await service_location.get_point_place(category, query)
+    return response
 
 
 @router.post(
