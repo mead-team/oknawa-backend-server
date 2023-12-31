@@ -1,9 +1,11 @@
+import redis
 from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Path
 from sqlalchemy.orm import Session
 
 from app.core.dependency import get_db
+from app.core.redis import get_redis
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
@@ -18,9 +20,11 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     summary="사용자들간의 중간지점역 찾기",
 )
 def post_location_point(
-    body: req_location.PostLocationPoint, db: Session = Depends(get_db)
+    body: req_location.PostLocationPoint,
+    db: Session = Depends(get_db),
+    redis_client: redis.StrictRedis = Depends(get_redis),
 ):
-    return service_location.post_location_point(body, db)
+    return service_location.post_location_point(body, db, redis_client)
 
 
 @router.get(
@@ -30,8 +34,9 @@ def post_location_point(
 )
 def get_location_point(
     query: req_location.GetLocationPoint = Depends(),
+    redis_client: redis.StrictRedis = Depends(get_redis),
 ):
-    return service_location.get_location_point(query)
+    return service_location.get_location_point(query, redis_client)
 
 
 @router.get(
@@ -52,6 +57,8 @@ async def get_point_place(
     response_model=res_location.PostPopularMeetingLocation,
     summary="주요 지하철역 리스트 DB 최신화",
 )
-def post_popular_meeting_location(background_tasks: BackgroundTasks):
+def post_popular_meeting_location(
+        background_tasks: BackgroundTasks,
+):
     background_tasks.add_task(service_location.post_popular_meeting_location)
     return {"msg": "DB Update Trigger"}
