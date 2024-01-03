@@ -15,6 +15,7 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
 @router.post(
     "/point",
+    status_code=200,
     response_model=res_location.PostLocationPoint,
     summary="사용자들간의 중간지점역 찾기",
 )
@@ -28,6 +29,7 @@ def post_location_point(
 
 @router.get(
     "/point",
+    status_code=200,
     response_model=res_location.GetLocationPoint,
     summary="share key를 이용한 사용자들간의 중간지점역 찾기",
 )
@@ -40,6 +42,7 @@ def get_location_point(
 
 @router.get(
     "/point/place/{category}",
+    status_code=200,
     response_model=res_location.GetPointPlace,
     summary="중간지점역의 핫플레이스(만날장소) 리스트",
 )

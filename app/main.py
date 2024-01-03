@@ -55,7 +55,7 @@ def api_health_check():
 async def redis_health_check(redis: Redis = Depends(get_redis)):
     redis.set("redis_server_status", "Ok")
     value = redis.get("redis_server_status").decode("utf-8")
-    return {"redis_health_check": f"oknawa-backend-api-server is {value}"}
+    return {"redis_health_check": f"oknawa-backend-redis is {value}"}
 
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")

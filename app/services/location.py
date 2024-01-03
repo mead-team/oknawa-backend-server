@@ -99,7 +99,7 @@ async def get_point_place(path, query):
 
 def post_popular_meeting_location(db, redis):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     print(f"popular meeting location update trigger start : {current_time}")
 
     open_api_data = open_api.call_open_data_api_popular_subway()
