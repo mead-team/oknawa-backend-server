@@ -30,8 +30,9 @@ def post_location_point(body, db, redis):
     Returns:
         dict: response 데이터
     """
+    body_data = body.model_dump()
     popular_location_in_db = location.get_popular_meeting_location_all(db)
-    center_coordinates = distance_calculator.get_center_coordinates(body.model_dump())
+    center_coordinates = distance_calculator.get_center_coordinates(body_data)
     center_location_data = distance_calculator.get_center_location(
         center_coordinates, popular_location_in_db
     )
@@ -46,6 +47,7 @@ def post_location_point(body, db, redis):
         "end_y": center_location_data.location_y,
         "share_key": str(uuid.uuid4()),
         "itinerary": participant_itinerary,
+        "request_info": body_data,
     }
     redis.set(response.get("share_key"), json.dumps(response))
 
