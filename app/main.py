@@ -16,10 +16,10 @@ from app.routers import location
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"👋 Hello, Run the server in the {settings.APP_ENV} environment")
+    print(f"INFO:     Hello, Run the server in the {settings.APP_ENV} environment 👋")
     scheduler.start()
     yield
-    print(f"👋 Bye, Shut down the server in the {settings.APP_ENV} environment")
+    print(f"INFO:     Bye, Shut down the server in the {settings.APP_ENV} environment 👋")
     scheduler.shutdown()
 
 

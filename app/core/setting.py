@@ -2,9 +2,8 @@ from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
-class GlobalSettings(BaseSettings):
-    ENV_STATE: str = "dev"
-    APP_ENV: str = "dev"
+class EnvSettings(BaseSettings):
+    APP_ENV: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
@@ -13,21 +12,25 @@ class GlobalSettings(BaseSettings):
     DEBUG: bool
     ALLOWED_ORIGINS: str
     KAKAO_REST_API_KEY: str
-    TMAP_REST_API_KEY: str
     REDIS_HOST: str
     REDIS_PORT: str
     REDIS_DATABASE: str
     OPEN_DATA_API_URL: str
+    TMAP_REST_API_KEY: str
     TMAP_API_URL: str
+
+
+class GlobalSettings(BaseSettings):
+    ENV_STATE: str = "dev"
 
     model_config = ConfigDict(env_file="env/base.env")
 
 
-class DevSettings(GlobalSettings):
+class DevSettings(EnvSettings):
     model_config = ConfigDict(env_file="env/dev.env")
 
 
-class ProdSettings(GlobalSettings):
+class ProdSettings(EnvSettings):
     model_config = ConfigDict(env_file="env/prod.env")
 
 
