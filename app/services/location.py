@@ -46,6 +46,7 @@ def post_location_point(body, db, redis):
         "end_y": center_location_data.location_y,
         "share_key": str(uuid.uuid4()),
         "itinerary": participant_itinerary,
+        "request_info": body.model_dump(),
     }
     redis.set(response.get("share_key"), json.dumps(response))
 
