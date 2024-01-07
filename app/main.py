@@ -1,24 +1,33 @@
-from typing import Literal
+from contextlib import asynccontextmanager
 
-from decouple import config
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from redis import Redis
 
-from app.core.database import SessionLocal, engine
+from app.core.dependency import get_redis
+from app.core.logging import logging_print
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
-from app.schemas.base import RouterTags
+from app.core.scheduler import scheduler
+from app.core.setting import settings
+from app.routers import location
 
-DEBUG = bool(config("DEBUG"))
-ORIGINS = config("ALLOWED_ORIGINS", default="").split(",")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"INFO:     Hello, Run the server in the {settings.APP_ENV} environment 👋")
+    scheduler.start()
+    yield
+    print(f"INFO:     Bye, Shut down the server in the {settings.APP_ENV} environment 👋")
+    scheduler.shutdown()
 
 
-app = FastAPI(**swagger_metadata)
+app = FastAPI(**swagger_metadata, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGINS,
+    allow_origins=settings.ALLOWED_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,19 +35,27 @@ app.add_middleware(
 app.add_middleware(ProcessTimeMiddleware)
 
 
-@app.get("/")
-def health_check():
-    return {"health_check": "Hello World", "debug": DEBUG}
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    return await logging_print(request, call_next)
 
 
-@app.get("/items/{category}", tags=[RouterTags.items])
-def read_item(category: Literal["food", "cafe", "drink"]):
-    return {"category": category}
+app.include_router(location.router)
 
 
-@app.get("/items/{item_id}", tags=[RouterTags.items])
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
+@app.get("/api-health-check")
+def api_health_check():
+    return {
+        "api_health_check": "oknawa-backend-api-server is Ok",
+        "debug-mode": settings.DEBUG,
+    }
+
+
+@app.get("/redis-health-check")
+async def redis_health_check(redis: Redis = Depends(get_redis)):
+    redis.set("redis_server_status", "Ok")
+    value = redis.get("redis_server_status").decode("utf-8")
+    return {"redis_health_check": f"oknawa-backend-redis is {value}"}
 
 
 app.mount("/static", StaticFiles(directory="app/core/static"), name="static")
