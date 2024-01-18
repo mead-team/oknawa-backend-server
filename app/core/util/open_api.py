@@ -1,3 +1,4 @@
+from collections import defaultdict
 from urllib.parse import quote
 
 import requests
@@ -10,28 +11,31 @@ from app.core.util import route_util
 def call_open_data_api_popular_subway():
     url = f"{settings.OPEN_DATA_API_URL}/json/CardSubwayStatsNew/1/1000/20231201"
     api_response = requests.get(url).json().get("CardSubwayStatsNew").get("row")
+    total_passenger = defaultdict(lambda: {"RIDE_PASGR_NUM": 0, "ALIGHT_PASGR_NUM": 0})
 
-    subway_result = []
     for subway in api_response:
-        line = subway["LINE_NUM"]
-        name = subway["SUB_STA_NM"]
-        ride_passenger = subway["RIDE_PASGR_NUM"]
-        alight_passenger = subway["ALIGHT_PASGR_NUM"]
+        subway_name = subway["SUB_STA_NM"]
+        total_passenger[subway_name]["RIDE_PASGR_NUM"] += subway["RIDE_PASGR_NUM"]
+        total_passenger[subway_name]["ALIGHT_PASGR_NUM"] += subway["ALIGHT_PASGR_NUM"]
 
-        subway_name = f"{line} {name}"
-        total_passenger = ride_passenger + alight_passenger
-        using_date = subway["USE_DT"]
-
-        subway_data = {
+    subway_list = [
+        {
             "subway_name": subway_name,
-            "total_passenger": total_passenger,
-            "using_date": using_date,
+            "total_passenger": passenger["RIDE_PASGR_NUM"]
+            + passenger["ALIGHT_PASGR_NUM"],
         }
-        subway_result.append(subway_data)
-    sorted_subway_result = sorted(
-        subway_result, key=lambda x: x["total_passenger"], reverse=True
-    )[:100]
-    return sorted_subway_result
+        for subway_name, passenger in total_passenger.items()
+    ]
+    sorted_subway_list = sorted(
+        subway_list, key=lambda x: x["total_passenger"], reverse=True
+    )[:80]
+
+    for subway in sorted_subway_list:
+        subway["subway_name"] = subway["subway_name"].split("(")[0].strip()
+        if not subway["subway_name"].endswith("역"):
+            subway["subway_name"] += "역"
+
+    return sorted_subway_list
 
 
 def call_tmap_api_participant_itinerary(body, center_location_data):

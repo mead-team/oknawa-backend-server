@@ -57,7 +57,7 @@ async def get_point_place(
 @router.post(
     "/meeting",
     response_model=res_location.PostPopularMeetingLocation,
-    summary="주요 지하철역 리스트 DB 최신화",
+    summary="주요 지하철역 데이터 DB Upsert",
 )
 def post_popular_meeting_location(
     background_tasks: BackgroundTasks,
