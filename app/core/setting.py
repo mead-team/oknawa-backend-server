@@ -1,4 +1,4 @@
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -18,6 +18,12 @@ class EnvSettings(BaseSettings):
     OPEN_DATA_API_URL: str
     TMAP_REST_API_KEY: str
     TMAP_API_URL: str
+
+    @field_validator("ALLOWED_ORIGINS")
+    def parsing_allowed_origins(cls, value):
+        if isinstance(value, str):
+            return [i.strip() for i in value.split(",")]
+        return value
 
 
 class GlobalSettings(BaseSettings):
