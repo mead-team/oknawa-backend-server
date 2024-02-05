@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Path
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -21,10 +21,11 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
 )
 def post_location_point(
     body: req_location.PostLocationPoint,
+    priority: int = Query(default=0, ge=0, le=4, title="n번째 가까운 위치", description="n번째 가까운 위치"),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_location_point(body, db, redis)
+    return service_location.post_location_point(body, priority, db, redis)
 
 
 @router.get(
