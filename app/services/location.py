@@ -13,7 +13,7 @@ from app.crud import location
 from app.models.location import PopularMeetingLocation
 
 
-def post_location_point(body, db, redis):
+def post_location_point(body, priority, db, redis):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
@@ -24,6 +24,7 @@ def post_location_point(body, db, redis):
 
     Args:
         body (obj): /point의 request로 받은 유저별 좌표
+        priority(int): n번째로 가까운 지역
         db: get_db
         redis: get_redis
 
@@ -34,7 +35,7 @@ def post_location_point(body, db, redis):
     popular_location_in_db = location.get_popular_meeting_location_all(db)
     center_coordinates = distance_calculator.get_center_coordinates(body_data)
     center_location_data = distance_calculator.get_center_location(
-        center_coordinates, popular_location_in_db
+        center_coordinates, popular_location_in_db, priority
     )
     participant_itinerary = open_api.call_tmap_api_participant_itinerary(
         body, center_location_data
