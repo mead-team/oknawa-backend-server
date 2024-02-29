@@ -21,11 +21,15 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
 )
 def post_location_point(
     body: req_location.PostLocationPoint,
+    api_type: Literal["t_map", "google_map"] | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
     priority: int = Query(default=0, ge=0, le=4, title="n번째 가까운 위치", description="n번째 가까운 위치"),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_location_point(body, priority, db, redis)
+    """
+    todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
+    """
+    return service_location.post_location_point(body, api_type, priority, db, redis)
 
 
 @router.get(

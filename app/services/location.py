@@ -13,7 +13,7 @@ from app.crud import location
 from app.models.location import PopularMeetingLocation
 
 
-def post_location_point(body, priority, db, redis):
+def post_location_point(body, api_type, priority, db, redis):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
@@ -37,9 +37,17 @@ def post_location_point(body, priority, db, redis):
     center_location_data = distance_calculator.get_center_location(
         center_coordinates, popular_location_in_db, priority
     )
-    participant_itinerary = open_api.call_tmap_api_participant_itinerary(
-        body, center_location_data
-    )
+    if api_type == "google_map":
+        participant_itinerary = open_api.call_googlemap_api_participant_itinerary(
+            body, center_location_data
+        )
+    elif api_type == "t_map" or api_type is None:
+        participant_itinerary = open_api.call_tmap_api_participant_itinerary(
+            body, center_location_data
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Not Found")
+
 
     response = {
         "station_name": center_location_data.name,
