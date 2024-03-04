@@ -1,3 +1,4 @@
+import polyline
 from collections import defaultdict
 from urllib.parse import quote
 
@@ -120,5 +121,52 @@ def call_tmap_api_participant_itinerary(body, center_location_data):
             raise HTTPException(
                 status_code=transit_response.status_code, detail=transit_response.json()
             )
+
+    return itinerary_list
+
+
+def call_googlemap_api_participant_itinerary(body, center_location_data):
+    directions_url = f"{settings.GOOGLE_API_URL}/directions/v2:computeRoutes"
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': f"{settings.GOOGLE_API_KEY}",
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' # 반환필드 선택
+    }
+
+    itinerary_list = []
+    for participant in body.participant:
+        itinerary = dict()
+        origin_latitude = participant.start_y
+        origin_longitude = participant.start_x
+        destination_latitude = center_location_data.location_y
+        destination_longitude = center_location_data.location_x
+
+        origin = {"location": {"latLng": dict(latitude=origin_latitude, longitude=origin_longitude)}}
+        destination = {"location": {"latLng": dict(latitude=destination_latitude, longitude=destination_longitude)}}
+        
+        source_and_target = {
+            "origin": origin,
+            "destination": destination,
+            "travelMode": "TRANSIT",
+            "transitPreferences": { "allowedTravelModes": ["SUBWAY"]}, # 선호 대중교통
+            "languageCode": "ko-KR"
+        }
+        response = requests.post(
+            directions_url,
+            headers=headers,
+            json=source_and_target,
+        )
+        response_route = response.json().get("routes")[0]
+        duration = int(response_route.get("duration")[:-1])
+        decoded_polyline = polyline.decode(response_route.get("polyline").get("encodedPolyline"))
+        total_polyline = [{"lng": lng, "lat": lat} for lat, lng in decoded_polyline]
+        itinerary.update(total_polyline=total_polyline, totalTime=duration)
+        itinerary_list.append(
+            dict(
+                name=participant.name,
+                region_name=participant.region_name,
+                itinerary=itinerary,
+            )
+        )
 
     return itinerary_list

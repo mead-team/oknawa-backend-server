@@ -18,6 +18,8 @@ class EnvSettings(BaseSettings):
     OPEN_DATA_API_URL: str
     TMAP_REST_API_KEY: str
     TMAP_API_URL: str
+    GOOGLE_API_KEY: str
+    GOOGLE_API_URL: str
 
     @field_validator("ALLOWED_ORIGINS")
     def parsing_allowed_origins(cls, value):
