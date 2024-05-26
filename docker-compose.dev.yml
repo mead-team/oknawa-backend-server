@@ -60,7 +60,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - env/base.env
+      - env/dev.env
     ports:
       - 5433:5432
     networks:
