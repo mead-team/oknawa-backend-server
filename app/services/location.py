@@ -63,6 +63,57 @@ def post_location_point(body, api_type, priority, db, redis):
     return response
 
 
+def post_location_points(body, api_type, priority, db, redis):
+    """
+        사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
+        tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
+
+        일단 어떤 데이터만 쓸지 모르기 때문에 API자체를 리턴, 추후에 데이터 정제하여 고도화
+
+        우선순위는 지하철 지하철 데이터가 없을경우엔 최단시간으로 제공
+
+    Args:
+        body (obj): /point의 request로 받은 유저별 좌표
+        priority(int): n번째로 가까운 지역
+        db: get_db
+        redis: get_redis
+
+    Returns:
+        dict: response 데이터
+    """
+    body_data = body.model_dump()
+    popular_location_in_db = location.get_popular_meeting_location_all(db)
+    center_coordinates = distance_calculator.get_center_coordinates(body_data)
+    center_location_data_list = distance_calculator.get_center_locations(
+        center_coordinates, popular_location_in_db, priority
+    )
+    if api_type == "google_map":
+        station_info_list = open_api.call_googlemap_api_participant_itineraries(
+            body, center_location_data_list
+        )
+    elif api_type == "t_map" or api_type is None:
+        station_info_list = open_api.call_tmap_api_participant_itineraries(
+            body, center_location_data_list
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    for station_info in station_info_list:
+        station_info["share_key"] = str(uuid.uuid4())
+        temp_station_info = station_info
+        # temp_station_info["request_info"] = body_data
+        redis.set(temp_station_info.get("share_key"), json.dumps(temp_station_info))
+
+    response = {
+        "station_info": station_info_list,
+        "request_info": body_data,
+    }
+
+    return response
+
+
+
+
 def get_location_point(query, redis):
     share_key = query.share_key
     share_key_exists_in_redis = redis.get(share_key)
