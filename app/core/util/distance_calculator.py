@@ -50,3 +50,29 @@ def get_center_location(center_coordinates, popular_location_in_db, priority):
     sorted_locations = sorted(location, key=lambda x: x[0])
 
     return sorted_locations[priority][1]
+
+
+def get_center_locations(center_coordinates, popular_location_in_db, priority):
+    """중간지점좌표와 인기있는역의 거리계산후 가장가까운 역들 리스트 리턴
+
+    Args:
+        center_coordinates (tuple): (중간지점x좌표, 중간지점y좌표)
+        popular_location_in_db (obj): db의 인기있는역 데이터
+        priority(int): n번째로 가까운 지역
+
+    Returns:
+        list: 인기 있는역 데이터의 요소 중 중간지점좌표와 n번째까지 가까운 지점 리스트
+    """
+    center_x, center_y = center_coordinates
+    location = []
+
+    for popular_location in popular_location_in_db:
+        location_x = float(popular_location.location_x)
+        location_y = float(popular_location.location_y)
+        current_distance = math.sqrt(
+            (center_x - location_x) ** 2 + (center_y - location_y) ** 2
+        )
+        location.append((current_distance, popular_location))
+
+    sorted_locations = sorted(location, key=lambda x: x[0])
+    return sorted_locations[:priority]
