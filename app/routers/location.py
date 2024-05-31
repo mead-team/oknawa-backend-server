@@ -1,12 +1,10 @@
-import asyncio
-from typing import Literal, List, Union
+from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
 
 from redis import Redis
 from sqlalchemy.orm import Session
 
-from app.core.socket import ConnectionManager, get_socket_manager
 from app.core.dependency import get_db, get_redis
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
@@ -96,15 +94,6 @@ def post_popular_meeting_location(
     return {"msg": "DB Update Trigger"}
 
 
-@router.websocket("/ws-together")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    query: req_location.GetTogetherRoomId = Depends(),
-    socket_manager: ConnectionManager = Depends(get_socket_manager),
-    redis: Redis = Depends(get_redis)
-):
-    await service_location.websocket_handler(websocket, query, socket_manager, redis)
-
 @router.get(
     "/together",
     status_code=200,
@@ -149,7 +138,7 @@ def post_together_location(
 @router.put(
     "/together/point",
     status_code=200,
-    response_model=Union[res_location.PutTogetherHost | res_location.PutTogetherClient],
+    response_model=res_location.PutTogetherHost,
     summary="함께 입력 호스트/클라이언트 출발지 수정",
 )
 def put_together_location(

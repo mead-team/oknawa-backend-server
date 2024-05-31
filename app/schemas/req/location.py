@@ -1,5 +1,3 @@
-from typing import Literal, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -40,11 +38,10 @@ class PostTogetherRoomId(TogetherRoomIdQueryParamBase):
 
 
 class PutTogetherRoomId(TogetherRoomIdQueryParamBase):
-    user_id: str = Field(title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
+    host_id: str = Field(title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
 
 
 class TogetherParticipant(BaseModel):
-    user_id: Optional[str] = Field(None, title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
     name: str = Field(title="참여자 이름", description="참여자 이름")
     region_name: str = Field(title="참여자 주소", description="참여자 주소")
     start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")

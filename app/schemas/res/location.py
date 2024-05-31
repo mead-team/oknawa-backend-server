@@ -1,5 +1,5 @@
 from pydantic import AnyUrl, BaseModel, Field
-from typing import List, Optional
+from typing import List
 
 
 class Hotplace(BaseModel):
@@ -68,7 +68,6 @@ class GetPointPlace(BaseModel):
 
 
 class TogetherParticipant(BaseModel):
-    user_id: str = Field(title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
     name: str = Field(title="참여자 이름", description="참여자 이름")
     region_name: str = Field(title="참여자 주소", description="참여자 주소")
     start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")
@@ -87,12 +86,7 @@ class PostTogetherHost(BaseModel):
 
 class PostTogetherClient(BaseModel):
     room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
-    client_id: str = Field(title="클라이언트 uuid", description="클라이언트 uuid")
 
 
 class PutTogetherHost(PostTogetherHost):
-    pass
-
-
-class PutTogetherClient(PostTogetherClient):
     pass

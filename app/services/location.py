@@ -5,7 +5,7 @@ from datetime import datetime
 
 import aiohttp
 import requests
-from fastapi import HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import HTTPException
 
 from app.core.setting import settings
 from app.core.util import aiohttp_util, distance_calculator, open_api, generate_key
@@ -222,28 +222,6 @@ def post_popular_meeting_location(db, redis):
     return response
 
 
-async def websocket_handler(websocket, query, socket_manager, redis):
-    room_id = query.room_id
-    await socket_manager.connect(websocket, room_id)
-    try:
-        while True:
-            room_data = redis.get(room_id)
-            if room_data:
-                participant_data = json.loads(room_data).get("participant")
-                response = {
-                    "room_id": room_id,
-                    "participant": participant_data
-                }
-                await websocket.send_text(json.dumps(response))
-            else:
-                await websocket.close()
-                socket_manager.disconnect(websocket, room_id)
-                break
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        socket_manager.disconnect(websocket, room_id)
-
-
 def get_together_location(query, redis):
     room_id = query.room_id
     generate_key.validate_uuid(room_id)
@@ -261,11 +239,10 @@ def get_together_location(query, redis):
 
 
 def post_together(body, redis):
-    TTL = 60 * 60 * 24 * 3
+    TTL = 60 * 60 * 24 * 14
     room_id = generate_key.create_uuid()
     host_id = room_id.replace("-", "")[:8][::-1]
     host_start_point = body.dict()
-    host_start_point["user_id"] = host_id
 
     room_data = {
         "host_id": host_id,
@@ -278,7 +255,7 @@ def post_together(body, redis):
 
 
 def post_together_location(body, query, redis):
-    TTL = 60 * 60 * 24 * 3
+    TTL = 60 * 60 * 24 * 14
     room_id = query.room_id
     generate_key.validate_uuid(room_id)
 
@@ -286,22 +263,18 @@ def post_together_location(body, query, redis):
     if not room_data:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    temp_id = generate_key.create_uuid()
-    client_id = temp_id.replace("-", "")[:8][::-1]
     client_start_point = body.dict()
-    client_start_point["user_id"] = client_id
-
     room_data = json.loads(room_data)
     room_data["participant"].append(client_start_point)
 
     redis.set(room_id, json.dumps(room_data), ex=TTL)
-    return {"room_id": room_id, "client_id": client_id}
+    return {"room_id": room_id}
 
 
 def put_together_location(body, query, redis):
-    TTL = 60 * 60 * 24 * 3
+    TTL = 60 * 60 * 24 * 14
     room_id = query.room_id
-    user_id = query.user_id
+    host_id = query.host_id
     generate_key.validate_uuid(room_id)
 
     room_data = redis.get(room_id)
@@ -309,42 +282,12 @@ def put_together_location(body, query, redis):
         raise HTTPException(status_code=404, detail="Room not found")
 
     room_data = json.loads(room_data)
-    participant_data = room_data["participant"]
-    host_id = room_data["host_id"]
+    host_id_data = room_data["host_id"]
 
-    user_ids = [data["user_id"] for data in participant_data]
-    if user_id not in user_ids:
+    if host_id != host_id_data:
         raise HTTPException(status_code=404, detail="Not Permission")
 
-    redis_dict = {data["user_id"]: data for data in participant_data}
     body_dict = body.dict().get("participant")
-
-    if host_id == user_id:
-        for item in body_dict:
-            user_id = item['user_id']
-            if user_id is not None:
-                redis_dict[user_id] = item
-            else:
-                temp_id = generate_key.create_uuid()
-                client_id = temp_id.replace("-", "")[:8][::-1]
-                item["user_id"] = client_id
-                redis_dict[client_id] = item
-
-        body_user_ids = {item["user_id"] for item in body_dict if item["user_id"] is not None}
-        remove_user_id = [redis_user_id for redis_user_id in redis_dict if redis_user_id not in body_user_ids]
-
-        for key in remove_user_id:
-            del redis_dict[key]
-
-        to_update_redis_data = list(redis_dict.values())
-        room_data["participant"] = to_update_redis_data
-        redis.set(room_id, json.dumps(room_data), ex=TTL)
-        return {"room_id": room_id, "host_id": host_id}
-    else:
-        if len(body_dict) > 1:
-            raise HTTPException(status_code=404, detail="Not Permission")
-        redis_dict[user_id] = body_dict[0]
-        to_update_redis_data = list(redis_dict.values())
-        room_data["participant"] = to_update_redis_data
-        redis.set(room_id, json.dumps(room_data), ex=TTL)
-        return {"room_id": room_id, "client_id": user_id}
+    room_data["participant"] = body_dict
+    redis.set(room_id, json.dumps(room_data), ex=TTL)
+    return {"room_id": room_id, "host_id": host_id}
