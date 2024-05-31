@@ -36,6 +36,25 @@ def post_location_point(
     return service_location.post_location_point(body, api_type, priority, db, redis)
 
 
+@router.post(
+    "/points",
+    status_code=200,
+    response_model=res_location.PostLocationPoints,
+    summary="사용자들간의 중간지점역 찾기",
+)
+def post_location_points(
+    body: req_location.PostLocationPoint,
+    api_type: Literal["t_map", "google_map"] | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
+    priority: int = Query(default=1, ge=1, le=4, title="가까운 위치 개수", description="가까운 위치 개수 min 1 ~ max 4"),
+    db: Session = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+):
+    """
+    todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
+    """
+    return service_location.post_location_points(body, api_type, priority, db, redis)
+
+
 @router.get(
     "/point",
     status_code=200,
