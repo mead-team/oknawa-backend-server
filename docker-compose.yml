@@ -21,7 +21,7 @@ services:
     container_name: oknawa_nginx
     image: nginx:latest
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf
       - ./letsencrypt:/etc/letsencrypt
       - /var/www/certbot:/var/www/certbot
     ports:
