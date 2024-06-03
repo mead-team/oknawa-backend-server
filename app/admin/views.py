@@ -5,4 +5,5 @@ class PopularMeetingLocationAdmin(ModelView, model=PopularMeetingLocation):
     name = "PopularMeetingLocation"
     name_plural = "PopularMeetingLocation"
     icon = "fa-solid fa-book"
+    can_create = False
     column_list = [c.name for c in PopularMeetingLocation.__table__.c]
