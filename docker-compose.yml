@@ -16,43 +16,31 @@ services:
       - env/base.env
     networks:
       - oknawa-network
-    labels:
-      - traefik.http.routers.fastapi.entrypoints=websecure
-      - traefik.http.routers.fastapi.rule=Host(`api.oknawa.com`)
-      - traefik.http.routers.fastapi.tls=true
-      - traefik.http.routers.fastapi.tls.certresolver=letsencrypt
-  
-  traefik:
-    container_name: traefik
-    image: traefik:v2.10
+
+  nginx:
+    container_name: oknawa_nginx
+    image: nginx:latest
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./letsencrypt/:/letsencrypt/
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
     ports:
       - 80:80
       - 443:443
+    depends_on:
+      - app
     networks:
       - oknawa-network
-    command:
-      - --api
-      - --providers.docker
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=oknawa.team@gmail.com
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-    labels:
-      # Dashboard
-      - traefik.http.routers.traefik.rule=Host(`traefik.oknawa.com`)
-      - traefik.http.routers.traefik.service=api@internal
-      - traefik.http.routers.traefik.middlewares=admin
-      - traefik.http.routers.traefik.tls.certresolver=letsencrypt
-      - traefik.http.routers.traefik.entrypoints=websecure
-      - traefik.http.middlewares.admin.basicauth.users=oknawa:$$2y$$05$$fENis8jcv/Y9Cij4CC4hheSsi/hqzWKCPm2aMAy4bJcurVOpwSE0W
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - oknawa-network
 
   db:
     container_name: oknawa_db
