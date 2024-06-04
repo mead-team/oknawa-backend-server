@@ -8,7 +8,8 @@ import requests
 from fastapi import HTTPException
 
 from app.core.setting import settings
-from app.core.util import aiohttp_util, distance_calculator, open_api, generate_key
+from app.core.util import (aiohttp_util, distance_calculator, generate_key,
+                           open_api)
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -47,7 +48,6 @@ def post_location_point(body, api_type, priority, db, redis):
         )
     else:
         raise HTTPException(status_code=404, detail="Not Found")
-
 
     response = {
         "station_name": center_location_data.name,
@@ -110,8 +110,6 @@ def post_location_points(body, api_type, priority, db, redis):
     }
 
     return response
-
-
 
 
 def get_location_point(query, redis):
@@ -231,10 +229,7 @@ def get_together_location(query, redis):
         raise HTTPException(status_code=404, detail="Room not found")
 
     participant_data = json.loads(room_data).get("participant")
-    response = {
-        "room_id": room_id,
-        "participant": participant_data
-    }
+    response = {"room_id": room_id, "participant": participant_data}
     return response
 
 
@@ -244,14 +239,10 @@ def post_together(body, redis):
     host_id = room_id.replace("-", "")[:8][::-1]
     host_start_point = body.dict()
 
-    room_data = {
-        "host_id": host_id,
-        "participant": [host_start_point]
-    }
+    room_data = {"host_id": host_id, "participant": [host_start_point]}
 
     redis.set(room_id, json.dumps(room_data), ex=TTL)
     return {"room_id": room_id, "host_id": host_id}
-
 
 
 def post_together_location(body, query, redis):

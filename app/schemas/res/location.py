@@ -1,5 +1,6 @@
-from pydantic import AnyUrl, BaseModel, Field
 from typing import List
+
+from pydantic import AnyUrl, BaseModel, Field
 
 
 class Hotplace(BaseModel):
@@ -43,7 +44,7 @@ class PostLocationPoint(BaseModel):
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
     itinerary: list
-    
+
 
 class PostLocationPoints(BaseModel):
     station_info: list[PostLocationPoint]
@@ -76,7 +77,9 @@ class TogetherParticipant(BaseModel):
 
 class GetTogetherLocation(BaseModel):
     room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
-    participant: List[TogetherParticipant] = Field([], title="함께 입력 현황", description="함께 입력 현황")
+    participant: List[TogetherParticipant] = Field(
+        [], title="함께 입력 현황", description="함께 입력 현황"
+    )
 
 
 class PostTogetherHost(BaseModel):

@@ -1,7 +1,6 @@
 from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query
-
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -14,7 +13,6 @@ from app.services import location as service_location
 router = APIRouter(prefix="/location", tags=[RouterTags.location])
 
 
-
 @router.post(
     "/point",
     status_code=200,
@@ -23,8 +21,11 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
 )
 def post_location_point(
     body: req_location.PostLocationPoint,
-    api_type: Literal["t_map", "google_map"] | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
-    priority: int = Query(default=0, ge=0, le=4, title="n번째 가까운 위치", description="n번째 가까운 위치"),
+    api_type: Literal["t_map", "google_map"]
+    | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
+    priority: int = Query(
+        default=0, ge=0, le=4, title="n번째 가까운 위치", description="n번째 가까운 위치"
+    ),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
@@ -42,8 +43,11 @@ def post_location_point(
 )
 def post_location_points(
     body: req_location.PostLocationPoint,
-    api_type: Literal["t_map", "google_map"] | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
-    priority: int = Query(default=1, ge=1, le=4, title="가까운 위치 개수", description="가까운 위치 개수 min 1 ~ max 4"),
+    api_type: Literal["t_map", "google_map"]
+    | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
+    priority: int = Query(
+        default=1, ge=1, le=4, title="가까운 위치 개수", description="가까운 위치 개수 min 1 ~ max 4"
+    ),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
 ):
