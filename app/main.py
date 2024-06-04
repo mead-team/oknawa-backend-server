@@ -4,15 +4,18 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from redis import Redis
+from sqladmin import Admin
 
 from app.core.dependency import get_redis
+from app.core.database import engine
 from app.core.logging import logging_print
 from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
 from app.core.scheduler import scheduler
 from app.core.setting import settings
 from app.routers import location
-
+from app.admin.auth import authentication_backend
+from app.admin.views import PopularMeetingLocationAdmin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,6 +46,10 @@ async def logging_middleware(request: Request, call_next):
 
 
 app.include_router(location.router)
+
+
+admin = Admin(app, engine, authentication_backend=authentication_backend)
+admin.add_view(PopularMeetingLocationAdmin)
 
 
 @app.get("/api-health-check")

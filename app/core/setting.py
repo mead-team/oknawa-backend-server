@@ -4,6 +4,10 @@ from pydantic_settings import BaseSettings
 
 class EnvSettings(BaseSettings):
     APP_ENV: str
+    OKNAWA_SECRET_KEY: str
+    ADMIN_ID: str
+    ADMIN_PASSWORD: str
+    ALGORITHM: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
