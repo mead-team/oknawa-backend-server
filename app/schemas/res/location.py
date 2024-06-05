@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import AnyUrl, BaseModel, Field
 
 
@@ -42,7 +44,7 @@ class PostLocationPoint(BaseModel):
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
     itinerary: list
-    
+
 
 class PostLocationPoints(BaseModel):
     station_info: list[PostLocationPoint]
@@ -64,3 +66,30 @@ class GetPopularMeetingLocation(BaseModel):
 class GetPointPlace(BaseModel):
     documents: list[Hotplace]
     meta: Meta
+
+
+class TogetherParticipant(BaseModel):
+    name: str = Field(title="참여자 이름", description="참여자 이름")
+    region_name: str = Field(title="참여자 주소", description="참여자 주소")
+    start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")
+    start_y: float = Field(title="참여자 시작 y좌표", description="y좌표")
+
+
+class GetTogetherLocation(BaseModel):
+    room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
+    participant: List[TogetherParticipant] = Field(
+        [], title="함께 입력 현황", description="함께 입력 현황"
+    )
+
+
+class PostTogetherHost(BaseModel):
+    room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
+    host_id: str = Field(title="호스트 uuid", description="호스트 uuid")
+
+
+class PostTogetherClient(BaseModel):
+    room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
+
+
+class PutTogetherHost(PostTogetherHost):
+    pass

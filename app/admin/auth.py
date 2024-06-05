@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException, status
-from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from sqladmin.authentication import AuthenticationBackend
 
 from app.core.setting import settings
+
 
 class BasicAuthBackend(AuthenticationBackend):
     async def login(self, request) -> bool:
@@ -27,20 +28,22 @@ class BasicAuthBackend(AuthenticationBackend):
         if not token:
             return False
         try:
-            payload = jwt.decode(token, settings.OKNAWA_SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                token, settings.OKNAWA_SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
         except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="JWTError",
             )
-            
+
         expire = payload.get("exp")
         if not expire or (int(expire) < datetime.utcnow().timestamp()):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="token expiration",
             )
-            
+
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(
@@ -54,7 +57,7 @@ class BasicAuthBackend(AuthenticationBackend):
             )
         return True
 
-    
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
@@ -62,7 +65,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now() + timedelta(days=1)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.OKNAWA_SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.OKNAWA_SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 

@@ -1,5 +1,3 @@
-from typing import Literal
-
 from pydantic import BaseModel, Field
 
 
@@ -25,3 +23,30 @@ class GetPointPlace(BaseModel):
 
 class GetLocationPoint(BaseModel):
     share_key: str = Field(title="공유 param key", description="공유 param key")
+
+
+class TogetherRoomIdQueryParamBase(BaseModel):
+    room_id: str = Field(..., title="room_id", description="room_id")
+
+
+class GetTogetherRoomId(TogetherRoomIdQueryParamBase):
+    pass
+
+
+class PostTogetherRoomId(TogetherRoomIdQueryParamBase):
+    pass
+
+
+class PutTogetherRoomId(TogetherRoomIdQueryParamBase):
+    host_id: str = Field(title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
+
+
+class TogetherParticipant(BaseModel):
+    name: str = Field(title="참여자 이름", description="참여자 이름")
+    region_name: str = Field(title="참여자 주소", description="참여자 주소")
+    start_x: float = Field(title="참여자 시작 x좌표", description="x좌표")
+    start_y: float = Field(title="참여자 시작 y좌표", description="y좌표")
+
+
+class PutTogetherLocationPoint(BaseModel):
+    participant: list[TogetherParticipant] = Field(title="참여자", description="참여자")

@@ -1,5 +1,7 @@
 from sqladmin import ModelView
+
 from app.models.location import PopularMeetingLocation
+
 
 class PopularMeetingLocationAdmin(ModelView, model=PopularMeetingLocation):
     name = "PopularMeetingLocation"

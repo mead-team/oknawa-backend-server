@@ -8,7 +8,8 @@ import requests
 from fastapi import HTTPException
 
 from app.core.setting import settings
-from app.core.util import aiohttp_util, distance_calculator, open_api
+from app.core.util import (aiohttp_util, distance_calculator, generate_key,
+                           open_api)
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -47,7 +48,6 @@ def post_location_point(body, api_type, priority, db, redis):
         )
     else:
         raise HTTPException(status_code=404, detail="Not Found")
-
 
     response = {
         "station_name": center_location_data.name,
@@ -110,8 +110,6 @@ def post_location_points(body, api_type, priority, db, redis):
     }
 
     return response
-
-
 
 
 def get_location_point(query, redis):
@@ -220,3 +218,67 @@ def post_popular_meeting_location(db, redis):
     }
     print(f"popular meeting location update trigger done : {current_time}")
     return response
+
+
+def get_together_location(query, redis):
+    room_id = query.room_id
+    generate_key.validate_uuid(room_id)
+
+    room_data = redis.get(room_id)
+    if not room_data:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    participant_data = json.loads(room_data).get("participant")
+    response = {"room_id": room_id, "participant": participant_data}
+    return response
+
+
+def post_together(body, redis):
+    TTL = 60 * 60 * 24 * 14
+    room_id = generate_key.create_uuid()
+    host_id = room_id.replace("-", "")[:8][::-1]
+    host_start_point = body.dict()
+
+    room_data = {"host_id": host_id, "participant": [host_start_point]}
+
+    redis.set(room_id, json.dumps(room_data), ex=TTL)
+    return {"room_id": room_id, "host_id": host_id}
+
+
+def post_together_location(body, query, redis):
+    TTL = 60 * 60 * 24 * 14
+    room_id = query.room_id
+    generate_key.validate_uuid(room_id)
+
+    room_data = redis.get(room_id)
+    if not room_data:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    client_start_point = body.dict()
+    room_data = json.loads(room_data)
+    room_data["participant"].append(client_start_point)
+
+    redis.set(room_id, json.dumps(room_data), ex=TTL)
+    return {"room_id": room_id}
+
+
+def put_together_location(body, query, redis):
+    TTL = 60 * 60 * 24 * 14
+    room_id = query.room_id
+    host_id = query.host_id
+    generate_key.validate_uuid(room_id)
+
+    room_data = redis.get(room_id)
+    if not room_data:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    room_data = json.loads(room_data)
+    host_id_data = room_data["host_id"]
+
+    if host_id != host_id_data:
+        raise HTTPException(status_code=404, detail="Not Permission")
+
+    body_dict = body.dict().get("participant")
+    room_data["participant"] = body_dict
+    redis.set(room_id, json.dumps(room_data), ex=TTL)
+    return {"room_id": room_id, "host_id": host_id}

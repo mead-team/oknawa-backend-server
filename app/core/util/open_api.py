@@ -1,7 +1,7 @@
-import polyline
 from collections import defaultdict
 from urllib.parse import quote
 
+import polyline
 import requests
 from fastapi import HTTPException
 
@@ -128,9 +128,9 @@ def call_tmap_api_participant_itinerary(body, center_location_data):
 def call_googlemap_api_participant_itinerary(body, center_location_data):
     directions_url = f"{settings.GOOGLE_API_URL}/directions/v2:computeRoutes"
     headers = {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': f"{settings.GOOGLE_API_KEY}",
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' # 반환필드 선택
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": f"{settings.GOOGLE_API_KEY}",
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",  # 반환필드 선택
     }
 
     itinerary_list = []
@@ -141,15 +141,25 @@ def call_googlemap_api_participant_itinerary(body, center_location_data):
         destination_latitude = center_location_data.location_y
         destination_longitude = center_location_data.location_x
 
-        origin = {"location": {"latLng": dict(latitude=origin_latitude, longitude=origin_longitude)}}
-        destination = {"location": {"latLng": dict(latitude=destination_latitude, longitude=destination_longitude)}}
-        
+        origin = {
+            "location": {
+                "latLng": dict(latitude=origin_latitude, longitude=origin_longitude)
+            }
+        }
+        destination = {
+            "location": {
+                "latLng": dict(
+                    latitude=destination_latitude, longitude=destination_longitude
+                )
+            }
+        }
+
         source_and_target = {
             "origin": origin,
             "destination": destination,
             "travelMode": "TRANSIT",
-            "transitPreferences": { "allowedTravelModes": ["SUBWAY"]}, # 선호 대중교통
-            "languageCode": "ko-KR"
+            "transitPreferences": {"allowedTravelModes": ["SUBWAY"]},  # 선호 대중교통
+            "languageCode": "ko-KR",
         }
         response = requests.post(
             directions_url,
@@ -158,7 +168,9 @@ def call_googlemap_api_participant_itinerary(body, center_location_data):
         )
         response_route = response.json().get("routes")[0]
         duration = int(response_route.get("duration")[:-1])
-        decoded_polyline = polyline.decode(response_route.get("polyline").get("encodedPolyline"))
+        decoded_polyline = polyline.decode(
+            response_route.get("polyline").get("encodedPolyline")
+        )
         total_polyline = [{"lng": lng, "lat": lat} for lat, lng in decoded_polyline]
         itinerary.update(total_polyline=total_polyline, totalTime=duration)
         itinerary_list.append(
@@ -172,7 +184,6 @@ def call_googlemap_api_participant_itinerary(body, center_location_data):
     return itinerary_list
 
 
-
 def call_tmap_api_participant_itineraries(body, center_location_data_list):
     """
     "station_name": center_location_data.name,
@@ -180,7 +191,7 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
         "end_x": center_location_data.location_x,
         "end_y": center_location_data.location_y,
     """
-    
+
     transit_url = f"{settings.TMAP_API_URL}/transit/routes"
     pedestrian_url = f"{settings.TMAP_API_URL}/tmap/routes/pedestrian?version=1"
     headers = {"appKey": f"{settings.TMAP_REST_API_KEY}"}
@@ -188,13 +199,13 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
     station_info_list = []
     for center_location_tuple in center_location_data_list:
         center_location_data = center_location_tuple[1]
-        station_info ={
+        station_info = {
             "station_name": center_location_data.name,
             "address_name": center_location_data.address,
             "end_x": center_location_data.location_x,
-            "end_y": center_location_data.location_y
+            "end_y": center_location_data.location_y,
         }
-        
+
         itinerary_list = []
         for participant in body.participant:
             source_and_target = dict(
@@ -241,11 +252,17 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
                             for feature in features:
                                 properties = feature.get("properties")
                                 if properties.get("pointType") == "SP":
-                                    itinerary.update(totalTime=properties.get("totalTime"))
-                                    lng, lat = feature.get("geometry").get("coordinates")
+                                    itinerary.update(
+                                        totalTime=properties.get("totalTime")
+                                    )
+                                    lng, lat = feature.get("geometry").get(
+                                        "coordinates"
+                                    )
                                     total_polyline.append({"lng": lng, "lat": lat})
                                 if not properties.get("pointType"):
-                                    coordinates = feature.get("geometry").get("coordinates")
+                                    coordinates = feature.get("geometry").get(
+                                        "coordinates"
+                                    )
                                     for coordinate in coordinates[1:]:
                                         lng, lat = coordinate
                                         total_polyline.append({"lng": lng, "lat": lat})
@@ -270,7 +287,8 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
                         )
             else:
                 raise HTTPException(
-                    status_code=transit_response.status_code, detail=transit_response.json()
+                    status_code=transit_response.status_code,
+                    detail=transit_response.json(),
                 )
         station_info["itinerary"] = itinerary_list
         station_info_list.append(station_info)
@@ -281,19 +299,19 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
 def call_googlemap_api_participant_itineraries(body, center_location_data_list):
     directions_url = f"{settings.GOOGLE_API_URL}/directions/v2:computeRoutes"
     headers = {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': f"{settings.GOOGLE_API_KEY}",
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' # 반환필드 선택
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": f"{settings.GOOGLE_API_KEY}",
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",  # 반환필드 선택
     }
-    
+
     station_info_list = []
     for center_location_tuple in center_location_data_list:
         center_location_data = center_location_tuple[1]
-        station_info ={
+        station_info = {
             "station_name": center_location_data.name,
             "address_name": center_location_data.address,
             "end_x": center_location_data.location_x,
-            "end_y": center_location_data.location_y
+            "end_y": center_location_data.location_y,
         }
 
         itinerary_list = []
@@ -304,15 +322,25 @@ def call_googlemap_api_participant_itineraries(body, center_location_data_list):
             destination_latitude = center_location_data.location_y
             destination_longitude = center_location_data.location_x
 
-            origin = {"location": {"latLng": dict(latitude=origin_latitude, longitude=origin_longitude)}}
-            destination = {"location": {"latLng": dict(latitude=destination_latitude, longitude=destination_longitude)}}
-            
+            origin = {
+                "location": {
+                    "latLng": dict(latitude=origin_latitude, longitude=origin_longitude)
+                }
+            }
+            destination = {
+                "location": {
+                    "latLng": dict(
+                        latitude=destination_latitude, longitude=destination_longitude
+                    )
+                }
+            }
+
             source_and_target = {
                 "origin": origin,
                 "destination": destination,
                 "travelMode": "TRANSIT",
-                "transitPreferences": { "allowedTravelModes": ["SUBWAY"]}, # 선호 대중교통
-                "languageCode": "ko-KR"
+                "transitPreferences": {"allowedTravelModes": ["SUBWAY"]},  # 선호 대중교통
+                "languageCode": "ko-KR",
             }
             response = requests.post(
                 directions_url,
@@ -321,7 +349,9 @@ def call_googlemap_api_participant_itineraries(body, center_location_data_list):
             )
             response_route = response.json().get("routes")[0]
             duration = int(response_route.get("duration")[:-1])
-            decoded_polyline = polyline.decode(response_route.get("polyline").get("encodedPolyline"))
+            decoded_polyline = polyline.decode(
+                response_route.get("polyline").get("encodedPolyline")
+            )
             total_polyline = [{"lng": lng, "lat": lat} for lat, lng in decoded_polyline]
             itinerary.update(total_polyline=total_polyline, totalTime=duration)
             itinerary_list.append(
