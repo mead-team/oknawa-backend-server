@@ -44,6 +44,7 @@ class PostLocationPoint(BaseModel):
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
     itinerary: list
+    request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
 class PostLocationPoints(BaseModel):
