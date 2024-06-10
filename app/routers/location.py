@@ -41,46 +41,6 @@ def post_location_point(
     return service_location.post_location_point(body, api_type, priority, db, redis)
 
 
-@router.post(
-    "/points",
-    status_code=200,
-    response_model=res_location.PostLocationPoints,
-    summary="사용자들간의 중간지점역 찾기 (추천받기)",
-)
-def post_location_points(
-    body: req_location.PostLocationPoint,
-    api_type: Literal["t_map", "google_map"] | None = Query(
-        default=None, title="Map API 종류", description="t_map or google_map"
-    ),
-    priority: int = Query(
-        default=4,
-        ge=1,
-        le=4,
-        title="가까운 위치 개수",
-        description="가까운 위치 개수 min 1 ~ max 4",
-    ),
-    db: Session = Depends(get_db),
-    redis: Redis = Depends(get_redis),
-):
-    """
-    todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
-    """
-    return service_location.post_location_points(body, api_type, priority, db, redis)
-
-
-@router.get(
-    "/points/{point_id}",
-    status_code=200,
-    response_model=res_location.GetLocationPoints,
-    summary="point_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개)",
-)
-def get_location_points(
-    point_id: str = Path(title="공유 param key", description="공유 param key"),
-    redis: Redis = Depends(get_redis),
-):
-    return service_location.get_location_points(point_id, redis)
-
-
 @router.get(
     "/point",
     status_code=200,
@@ -120,58 +80,3 @@ def post_popular_meeting_location(
 ):
     background_tasks.add_task(service_location.post_popular_meeting_location, db, redis)
     return {"msg": "DB Update Trigger"}
-
-
-@router.get(
-    "/together",
-    status_code=200,
-    response_model=res_location.GetTogetherLocation,
-    summary="함께 입력 현황 조회",
-)
-def get_together_location(
-    query: req_location.GetTogetherRoomId = Depends(),
-    redis: Redis = Depends(get_redis),
-):
-    response = service_location.get_together_location(query, redis)
-    return response
-
-
-@router.post(
-    "/together",
-    status_code=201,
-    response_model=res_location.PostTogetherHost,
-    summary="함께 입력 호스트 출발지 입력 및 공간 생성",
-)
-def post_together(
-    body: req_location.Participant,
-    redis: Redis = Depends(get_redis),
-):
-    return service_location.post_together(body, redis)
-
-
-@router.post(
-    "/together/point",
-    status_code=201,
-    response_model=res_location.PostTogetherClient,
-    summary="함께 입력 클라이언트 출발지 입력",
-)
-def post_together_location(
-    body: req_location.Participant,
-    query: req_location.PostTogetherRoomId = Depends(),
-    redis: Redis = Depends(get_redis),
-):
-    return service_location.post_together_location(body, query, redis)
-
-
-@router.put(
-    "/together/point",
-    status_code=200,
-    response_model=res_location.PutTogetherHost,
-    summary="함께 입력 호스트/클라이언트 출발지 수정",
-)
-def put_together_location(
-    body: req_location.PutTogetherLocationPoint,
-    query: req_location.PutTogetherRoomId = Depends(),
-    redis: Redis = Depends(get_redis),
-):
-    return service_location.put_together_location(body, query, redis)

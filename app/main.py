@@ -15,7 +15,7 @@ from app.core.metadata import swagger_metadata
 from app.core.middleware import ProcessTimeMiddleware
 from app.core.scheduler import scheduler
 from app.core.setting import settings
-from app.routers import location
+from app.routers import location, location_points, location_together
 
 
 @asynccontextmanager
@@ -47,6 +47,8 @@ async def logging_middleware(request: Request, call_next):
 
 
 app.include_router(location.router)
+app.include_router(location_points.router)
+app.include_router(location_together.router)
 
 
 admin = Admin(app, engine, authentication_backend=authentication_backend)
