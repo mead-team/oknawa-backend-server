@@ -8,8 +8,7 @@ import requests
 from fastapi import HTTPException
 
 from app.core.setting import settings
-from app.core.util import (aiohttp_util, distance_calculator, generate_key,
-                           open_api)
+from app.core.util import aiohttp_util, distance_calculator, generate_key, open_api
 from app.crud import location
 from app.models.location import PopularMeetingLocation
 
@@ -100,16 +99,27 @@ def post_location_points(body, api_type, priority, db, redis):
 
     for station_info in station_info_list:
         station_info["share_key"] = str(uuid.uuid4())
-        temp_station_info = station_info
-        # temp_station_info["request_info"] = body_data
-        redis.set(temp_station_info.get("share_key"), json.dumps(temp_station_info))
 
     response = {
+        "point_id": str(uuid.uuid4()),
+        "map_host_id": str(uuid.uuid4()),
         "station_info": station_info_list,
         "request_info": body_data,
     }
+    redis.set(response.get("point_id"), json.dumps(response))
 
     return response
+
+
+def get_location_points(point_id, redis):
+    point_id = point_id
+    point_id_exists_in_redis = redis.get(point_id)
+
+    if point_id_exists_in_redis is None:
+        raise HTTPException(status_code=404, detail="Not Found")
+    else:
+        response = json.loads(point_id_exists_in_redis.decode("utf-8"))
+        return response
 
 
 def get_location_point(query, redis):

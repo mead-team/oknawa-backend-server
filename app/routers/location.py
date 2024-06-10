@@ -17,14 +17,20 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     "/point",
     status_code=200,
     response_model=res_location.PostLocationPoint,
-    summary="사용자들간의 중간지점역 찾기",
+    summary="사용자들간의 중간지점역 찾기, 삭제예정",
+    deprecated=True,
 )
 def post_location_point(
     body: req_location.PostLocationPoint,
-    api_type: Literal["t_map", "google_map"]
-    | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
+    api_type: Literal["t_map", "google_map"] | None = Query(
+        default=None, title="Map API 종류", description="t_map or google_map"
+    ),
     priority: int = Query(
-        default=0, ge=0, le=4, title="n번째 가까운 위치", description="n번째 가까운 위치"
+        default=0,
+        ge=0,
+        le=4,
+        title="n번째 가까운 위치",
+        description="n번째 가까운 위치",
     ),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
@@ -39,14 +45,19 @@ def post_location_point(
     "/points",
     status_code=200,
     response_model=res_location.PostLocationPoints,
-    summary="사용자들간의 중간지점역 찾기",
+    summary="사용자들간의 중간지점역 찾기 (추천받기)",
 )
 def post_location_points(
     body: req_location.PostLocationPoint,
-    api_type: Literal["t_map", "google_map"]
-    | None = Query(default=None, title="Map API 종류", description="t_map or google_map"),
+    api_type: Literal["t_map", "google_map"] | None = Query(
+        default=None, title="Map API 종류", description="t_map or google_map"
+    ),
     priority: int = Query(
-        default=1, ge=1, le=4, title="가까운 위치 개수", description="가까운 위치 개수 min 1 ~ max 4"
+        default=4,
+        ge=1,
+        le=4,
+        title="가까운 위치 개수",
+        description="가까운 위치 개수 min 1 ~ max 4",
     ),
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
@@ -58,10 +69,23 @@ def post_location_points(
 
 
 @router.get(
+    "/points/{point_id}",
+    status_code=200,
+    response_model=res_location.GetLocationPoints,
+    summary="point_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개)",
+)
+def get_location_points(
+    point_id: str = Path(title="공유 param key", description="공유 param key"),
+    redis: Redis = Depends(get_redis),
+):
+    return service_location.get_location_points(point_id, redis)
+
+
+@router.get(
     "/point",
     status_code=200,
     response_model=res_location.GetLocationPoint,
-    summary="share key를 이용한 사용자들간의 중간지점역 찾기",
+    summary="share key를 이용한 사용자들간의 중간지점역 찾기 (결과확정 페이지)",
 )
 def get_location_point(
     query: req_location.GetLocationPoint = Depends(),
@@ -74,7 +98,7 @@ def get_location_point(
     "/point/place/{category}",
     status_code=200,
     response_model=res_location.GetPointPlace,
-    summary="중간지점역의 핫플레이스(만날장소) 리스트",
+    summary="결과확정페이지에서 중간지점역의 핫플레이스(만날장소) 리스트",
 )
 async def get_point_place(
     category: Literal["food", "cafe", "drink"] = Path(),

@@ -25,6 +25,10 @@ class GetLocationPoint(BaseModel):
     share_key: str = Field(title="공유 param key", description="공유 param key")
 
 
+class GetLocationPoints(BaseModel):
+    point_id: str = Field(title="공유 param key", description="공유 param key")
+
+
 class TogetherRoomIdQueryParamBase(BaseModel):
     room_id: str = Field(..., title="room_id", description="room_id")
 
@@ -38,7 +42,9 @@ class PostTogetherRoomId(TogetherRoomIdQueryParamBase):
 
 
 class PutTogetherRoomId(TogetherRoomIdQueryParamBase):
-    host_id: str = Field(title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid")
+    host_id: str = Field(
+        title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid"
+    )
 
 
 class TogetherParticipant(BaseModel):

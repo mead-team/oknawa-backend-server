@@ -47,11 +47,17 @@ class PostLocationPoint(BaseModel):
 
 
 class PostLocationPoints(BaseModel):
+    point_id: str
+    map_host_id: str
     station_info: list[PostLocationPoint]
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
 class GetLocationPoint(PostLocationPoint):
+    pass
+
+
+class GetLocationPoints(PostLocationPoints):
     pass
 
 
