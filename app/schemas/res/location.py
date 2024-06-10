@@ -53,11 +53,30 @@ class PostLocationPoints(BaseModel):
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
-class GetLocationPoint(PostLocationPoint):
-    pass
-
-
 class GetLocationPoints(PostLocationPoints):
+    map_host_id: str = Field(exclude=True)
+
+
+class LocationPointsVote(BaseModel):
+    share_key: str
+    vote: int
+
+
+class GetLocationPointsVote(BaseModel):
+    point_id: str
+    station_info: list[LocationPointsVote]
+    confirmed: str | None = None
+
+
+class PostLocationPointsVote(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
+
+
+class PostLocationPointsConfirm(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
+
+
+class GetLocationPoint(PostLocationPoint):
     pass
 
 

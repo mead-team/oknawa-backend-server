@@ -31,6 +31,7 @@ def post_location_point(body, api_type, priority, db, redis):
     Returns:
         dict: response 데이터
     """
+    TTL = 60 * 60 * 24 * 14
     body_data = body.model_dump()
     popular_location_in_db = location.get_popular_meeting_location_all(db)
     center_coordinates = distance_calculator.get_center_coordinates(body_data)
@@ -57,7 +58,7 @@ def post_location_point(body, api_type, priority, db, redis):
         "itinerary": participant_itinerary,
         "request_info": body_data,
     }
-    redis.set(response.get("share_key"), json.dumps(response))
+    redis.set(response.get("share_key"), json.dumps(response), ex=TTL)
 
     return response
 
@@ -80,12 +81,19 @@ def post_location_points(body, api_type, priority, db, redis):
     Returns:
         dict: response 데이터
     """
+    TTL = 60 * 60 * 24 * 14
+    point_id = str(uuid.uuid4())
+    map_host_id = str(uuid.uuid4())
+    redis_points_key = f"points-{point_id}"
+    redis_votes_key = f"votes-{point_id}"
+
     body_data = body.model_dump()
     popular_location_in_db = location.get_popular_meeting_location_all(db)
     center_coordinates = distance_calculator.get_center_coordinates(body_data)
     center_location_data_list = distance_calculator.get_center_locations(
         center_coordinates, popular_location_in_db, priority
     )
+
     if api_type == "google_map":
         station_info_list = open_api.call_googlemap_api_participant_itineraries(
             body, center_location_data_list
@@ -101,25 +109,68 @@ def post_location_points(body, api_type, priority, db, redis):
         station_info["share_key"] = str(uuid.uuid4())
 
     response = {
-        "point_id": str(uuid.uuid4()),
-        "map_host_id": str(uuid.uuid4()),
+        "point_id": point_id,
+        "map_host_id": map_host_id,
         "station_info": station_info_list,
         "request_info": body_data,
     }
-    redis.set(response.get("point_id"), json.dumps(response))
+    votes = {
+        "point_id": point_id,
+        "map_host_id": map_host_id,
+        "station_info": [
+            {"share_key": station_info.get("share_key"), "vote": 0}
+            for station_info in station_info_list
+        ],
+        "confirmed": None,
+    }
+
+    redis.set(redis_points_key, json.dumps(response), ex=TTL)
+    redis.set(redis_votes_key, json.dumps(votes), ex=TTL)
 
     return response
 
 
 def get_location_points(point_id, redis):
-    point_id = point_id
-    point_id_exists_in_redis = redis.get(point_id)
+    redis_points_key = f"points-{point_id}"
+
+    point_id_exists_in_redis = redis.get(redis_points_key, point_id)
 
     if point_id_exists_in_redis is None:
         raise HTTPException(status_code=404, detail="Not Found")
     else:
         response = json.loads(point_id_exists_in_redis.decode("utf-8"))
         return response
+
+
+def get_location_points_vote(point_id, redis):
+    """선호도 투표 목록, 결과
+    SSE redis에서 선호도투표 데이터 가져와서 리턴
+    Args:
+        point_id (_type_): _description_
+        redis (_type_): _description_
+    """
+    ...
+
+
+def post_location_points_vote(point_id, redis):
+    """선호도 투표 하기
+    redis에서 선호도투표 데이터 가져와서 vote 1씩 올리고 다시저장
+    Args:
+        point_id (_type_): _description_
+        redis (_type_): _description_
+    """
+    ...
+
+
+def post_location_points_conirm(point_id, redis):
+    """선호도 투표 확정
+    confirmed에 share key 넣기,
+    Redis에 hset 해시는 point share key를 필드로 확정된 결과 1개 저장
+    Args:
+        point_id (_type_): _description_
+        redis (_type_): _description_
+    """
+    ...
 
 
 def get_location_point(query, redis):
