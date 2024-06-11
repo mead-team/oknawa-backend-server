@@ -43,30 +43,27 @@ class PostLocationPoint(BaseModel):
     end_x: float = Field(title="x좌표", description="x좌표")
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
+    vote: int
     itinerary: list
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
 class PostLocationPoints(BaseModel):
-    point_id: str
-    map_host_id: str
-    station_info: list[PostLocationPoint]
+    map_id: str = Field(title="추천받기 방 ID", description="추천받기 방 ID")
+    map_host_id: str = Field(title="추천받기 방장 ID", description="추천받기 방장 ID")
+    station_info: list[PostLocationPoint] = Field(
+        title="중간지점역 정보 리스트", description="중간지점역 정보 리스트"
+    )
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
+    confirmed: str | None = Field(
+        default=None,
+        title="선호도투표 확정키",
+        description="확정된 중간지점역 share_key",
+    )
 
 
 class GetLocationPoints(PostLocationPoints):
     map_host_id: str = Field(exclude=True)
-
-
-class LocationPointsVote(BaseModel):
-    share_key: str
-    vote: int
-
-
-class GetLocationPointsVote(BaseModel):
-    point_id: str
-    station_info: list[LocationPointsVote]
-    confirmed: str | None = None
 
 
 class PostLocationPointsVote(BaseModel):

@@ -45,7 +45,7 @@ def post_location_point(
     "/point",
     status_code=200,
     response_model=res_location.GetLocationPoint,
-    summary="share key를 이용한 사용자들간의 중간지점역 찾기 (결과확정 페이지)",
+    summary="✅ share key를 이용한 사용자들간의 중간지점역 찾기 (결과확정 페이지)",
 )
 def get_location_point(
     query: req_location.GetLocationPoint = Depends(),
