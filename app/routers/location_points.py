@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Request
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -76,12 +76,14 @@ def get_location_points_long_polling(
     response_model=res_location.GetLocationPoints,
     summary="🔄 map_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개) Server-Sent-Event",
 )
-def get_location_points_sse(
+async def get_location_points_sse(
+    request: Request,
     map_id: str = Path(
         title="(결과지도페이지 4개) ID", description="(결과지도페이지 4개) ID"
     ),
     redis: Redis = Depends(get_redis),
-): ...
+):
+    return await service_location.get_location_points_long_sse(request, map_id, redis)
 
 
 @router.post(

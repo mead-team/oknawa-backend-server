@@ -6,7 +6,9 @@ from datetime import datetime
 
 import aiohttp
 import requests
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
+from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 
 from app.core.setting import settings
 from app.core.util import aiohttp_util, distance_calculator, generate_key, open_api
@@ -161,6 +163,36 @@ def get_location_points_long_polling(map_id, redis):
             response = json.loads(current_points_exists_in_redis.decode("utf-8"))
             return response
         time.sleep(1)
+
+
+async def get_location_points_long_sse(request: Request, map_id, redis):
+    async def event_generator(request):
+        redis_map_id_key = f"map-{map_id}"
+
+        previous_points_exists_in_redis = redis.get(redis_map_id_key)
+        if previous_points_exists_in_redis is None:
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        while True:
+            if await request.is_disconnected():
+                print("Client disconnected")
+                break
+
+            response = None
+            current_points_exists_in_redis = redis.get(redis_map_id_key)
+            if current_points_exists_in_redis is None:
+                raise HTTPException(status_code=404, detail="Not Found")
+
+            if previous_points_exists_in_redis != current_points_exists_in_redis:
+                response = json.loads(current_points_exists_in_redis.decode("utf-8"))
+                previous_points_exists_in_redis = current_points_exists_in_redis
+
+            if response:
+                yield f"{json.dumps(response)}\n\n"
+
+            await asyncio.sleep(1)
+
+    return EventSourceResponse(event_generator(request))
 
 
 def post_location_points_vote(map_id, share_key, redis):
