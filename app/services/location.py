@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 import uuid
 from datetime import datetime
 
@@ -135,6 +136,31 @@ def get_location_points(map_id, redis):
 
     response = json.loads(points_exists_in_redis.decode("utf-8"))
     return response
+
+
+def get_location_points_long_polling(map_id, redis):
+    timeout = 30
+    redis_map_id_key = f"map-{map_id}"
+
+    start_time = time.time()
+
+    previous_points_exists_in_redis = redis.get(redis_map_id_key)
+    if previous_points_exists_in_redis is None:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    while True:
+        current_points_exists_in_redis = redis.get(redis_map_id_key)
+        if current_points_exists_in_redis is None:
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        if previous_points_exists_in_redis != current_points_exists_in_redis:
+            response = json.loads(current_points_exists_in_redis.decode("utf-8"))
+            return response
+
+        if time.time() - start_time > timeout:
+            response = json.loads(current_points_exists_in_redis.decode("utf-8"))
+            return response
+        time.sleep(1)
 
 
 def post_location_points_vote(map_id, share_key, redis):

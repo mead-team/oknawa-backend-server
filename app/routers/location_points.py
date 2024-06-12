@@ -59,14 +59,15 @@ def get_location_points(
     "/points/{map_id}/long-polling",
     status_code=200,
     response_model=res_location.GetLocationPoints,
-    summary="🔄 map_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개) long polling",
+    summary="✅ map_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개) long polling",
 )
 def get_location_points_long_polling(
     map_id: str = Path(
         title="(결과지도페이지 4개) ID", description="(결과지도페이지 4개) ID"
     ),
     redis: Redis = Depends(get_redis),
-): ...
+):
+    return service_location.get_location_points_long_polling(map_id, redis)
 
 
 @router.get(
