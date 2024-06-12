@@ -74,7 +74,7 @@ def get_location_points_long_polling(
     "/points/{map_id}/sse",
     status_code=200,
     response_model=res_location.GetLocationPoints,
-    summary="🔄 map_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개) Server-Sent-Event",
+    summary="🔄 map_id를 이용한 사용자들간의 중간지점역 찾기 (결과지도페이지 4개) Server-Sent-Event // 아직작업중...ㅠㅠ",
 )
 async def get_location_points_sse(
     request: Request,

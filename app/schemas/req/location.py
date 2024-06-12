@@ -42,7 +42,7 @@ class PostTogetherRoomId(TogetherRoomIdQueryParamBase):
 
 
 class PutTogetherRoomId(TogetherRoomIdQueryParamBase):
-    host_id: str = Field(
+    room_host_id: str = Field(
         title="호스트/클라이언트 uuid", description="호스트/클라이언트 uuid"
     )
 

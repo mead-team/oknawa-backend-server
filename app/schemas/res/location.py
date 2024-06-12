@@ -51,6 +51,10 @@ class PostLocationPoint(BaseModel):
 class PostLocationPoints(BaseModel):
     map_id: str = Field(title="추천받기 방 ID", description="추천받기 방 ID")
     map_host_id: str = Field(title="추천받기 방장 ID", description="추천받기 방장 ID")
+
+
+class GetLocationPoints(PostLocationPoints):
+    map_host_id: str = Field(exclude=True)
     station_info: list[PostLocationPoint] = Field(
         title="중간지점역 정보 리스트", description="중간지점역 정보 리스트"
     )
@@ -60,10 +64,6 @@ class PostLocationPoints(BaseModel):
         title="선호도투표 확정키",
         description="확정된 중간지점역 share_key",
     )
-
-
-class GetLocationPoints(PostLocationPoints):
-    map_host_id: str = Field(exclude=True)
 
 
 class PostLocationPointsVote(BaseModel):
@@ -107,12 +107,12 @@ class GetTogetherLocation(BaseModel):
 
 class PostTogetherHost(BaseModel):
     room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
-    host_id: str = Field(title="호스트 uuid", description="호스트 uuid")
+    room_host_id: str = Field(title="호스트 uuid", description="호스트 uuid")
 
 
 class PostTogetherClient(BaseModel):
-    room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
 
 
-class PutTogetherHost(PostTogetherHost):
-    pass
+class PutTogetherHost(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")

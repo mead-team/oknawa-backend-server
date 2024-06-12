@@ -1,13 +1,13 @@
 import asyncio
 import json
 import time
-import uuid
 from datetime import datetime
 
 import aiohttp
 import requests
 from fastapi import HTTPException, Request
-from fastapi.responses import StreamingResponse
+
+# from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.setting import settings
@@ -52,16 +52,16 @@ def post_location_point(body, api_type, priority, db, redis):
     else:
         raise HTTPException(status_code=404, detail="Not Found")
 
+    share_key = generate_key.create_uuid()
     response = {
         "station_name": center_location_data.name,
         "address_name": center_location_data.address,
         "end_x": center_location_data.location_x,
         "end_y": center_location_data.location_y,
-        "share_key": str(uuid.uuid4()),
+        "share_key": share_key,
         "itinerary": participant_itinerary,
         "request_info": body_data,
     }
-    share_key = response.get("share_key")
     redis_point_id_key = f"point-{share_key}"
 
     redis.set(redis_point_id_key, json.dumps(response), ex=TTL)
@@ -88,8 +88,8 @@ def post_location_points(body, api_type, priority, db, redis):
         dict: response 데이터
     """
     TTL = 60 * 60 * 24 * 14
-    map_id = str(uuid.uuid4())
-    map_host_id = str(uuid.uuid4())
+    map_id = generate_key.create_uuid()
+    map_host_id = map_id.replace("-", "")[:8][::-1]
     redis_map_id_key = f"map-{map_id}"
 
     body_data = body.model_dump()
@@ -111,7 +111,8 @@ def post_location_points(body, api_type, priority, db, redis):
         raise HTTPException(status_code=404, detail="Not Found")
 
     for station_info in station_info_list:
-        station_info["share_key"] = str(uuid.uuid4())
+        share_key = generate_key.create_uuid()
+        station_info["share_key"] = share_key
         station_info["vote"] = 0
         station_info["request_info"] = body_data
 
@@ -130,6 +131,7 @@ def post_location_points(body, api_type, priority, db, redis):
 
 def get_location_points(map_id, redis):
     redis_map_id_key = f"map-{map_id}"
+    generate_key.validate_uuid(map_id)
 
     points_exists_in_redis = redis.get(redis_map_id_key)
 
@@ -143,6 +145,7 @@ def get_location_points(map_id, redis):
 def get_location_points_long_polling(map_id, redis):
     timeout = 30
     redis_map_id_key = f"map-{map_id}"
+    generate_key.validate_uuid(map_id)
 
     start_time = time.time()
 
@@ -196,15 +199,8 @@ async def get_location_points_long_sse(request: Request, map_id, redis):
 
 
 def post_location_points_vote(map_id, share_key, redis):
-    """선호도 투표 하기
-    redis에서 선호도투표 데이터 가져와서 vote 1씩 올리고 다시저장
-
-    Args:
-        map_id (str): _description_
-        share_key (str): _description_
-        redis (_type_): _description_
-    """
     redis_map_id_key = f"map-{map_id}"
+    generate_key.validate_uuid(map_id)
 
     points_exists_in_redis = redis.get(redis_map_id_key)
 
@@ -229,17 +225,9 @@ def post_location_points_vote(map_id, share_key, redis):
 
 
 def post_location_points_conirm(map_id, map_host_id, share_key, redis):
-    """선호도 투표 확정
-    confirmed에 share key 넣기,
-    Redis에 hset 해시는 point share key를 필드로 확정된 결과 1개 저장
-    Args:
-        map_id (_type_): _description_
-        map_host_id (_type_): _description_
-        share_key (_type_): _description_
-        redis (_type_): _description_
-    """
     TTL = 60 * 60 * 24 * 14
     redis_map_id_key = f"map-{map_id}"
+    generate_key.validate_uuid(map_id)
 
     points_exists_in_redis = redis.get(redis_map_id_key)
 
@@ -317,7 +305,7 @@ async def get_point_place(path, query):
 
 def post_popular_meeting_location(db, redis):
     KAKAO_REST_API_KEY = settings.KAKAO_REST_API_KEY
-    current_time = datetime.utcnow()
+    current_time = datetime.now()
     print(f"popular meeting location update trigger start : {current_time}")
 
     open_api_data = open_api.call_open_data_api_popular_subway()
@@ -378,11 +366,11 @@ def post_popular_meeting_location(db, redis):
     return response
 
 
-def get_together_location(query, redis):
-    room_id = query.room_id
+def get_together_location_polling(room_id, redis):
     generate_key.validate_uuid(room_id)
+    redis_room_id_key = f"room-{room_id}"
 
-    room_data = redis.get(room_id)
+    room_data = redis.get(redis_room_id_key)
     if not room_data:
         raise HTTPException(status_code=404, detail="Room not found")
 
@@ -391,24 +379,58 @@ def get_together_location(query, redis):
     return response
 
 
+def get_together_location_long_polling(room_id, redis):
+    timeout = 30
+    generate_key.validate_uuid(room_id)
+    redis_room_id_key = f"room-{room_id}"
+
+    start_time = time.time()
+
+    previous_room_data = redis.get(redis_room_id_key)
+    if not previous_room_data:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    while True:
+        current_room_data = redis.get(redis_room_id_key)
+        if not current_room_data:
+            raise HTTPException(status_code=404, detail="Room not found")
+
+        if previous_room_data != current_room_data:
+            participant_data = json.loads(current_room_data).get("participant")
+            response = {"room_id": room_id, "participant": participant_data}
+            return response
+
+        if time.time() - start_time > timeout:
+            participant_data = json.loads(current_room_data).get("participant")
+            response = {"room_id": room_id, "participant": participant_data}
+            return response
+        time.sleep(1)
+
+
 def post_together(body, redis):
     TTL = 60 * 60 * 24 * 14
     room_id = generate_key.create_uuid()
-    host_id = room_id.replace("-", "")[:8][::-1]
+    redis_room_id_key = f"room-{room_id}"
+    room_host_id = room_id.replace("-", "")[:8][::-1]
     host_start_point = body.dict()
 
-    room_data = {"host_id": host_id, "participant": [host_start_point]}
+    room_data = {
+        "room_id": room_id,
+        "room_host_id": room_host_id,
+        "participant": [host_start_point],
+    }
+    redis.set(redis_room_id_key, json.dumps(room_data), ex=TTL)
 
-    redis.set(room_id, json.dumps(room_data), ex=TTL)
-    return {"room_id": room_id, "host_id": host_id}
+    response = room_data
+    return response
 
 
-def post_together_location(body, query, redis):
+def post_together_location(body, room_id, redis):
     TTL = 60 * 60 * 24 * 14
-    room_id = query.room_id
     generate_key.validate_uuid(room_id)
+    redis_room_id_key = f"room-{room_id}"
 
-    room_data = redis.get(room_id)
+    room_data = redis.get(redis_room_id_key)
     if not room_data:
         raise HTTPException(status_code=404, detail="Room not found")
 
@@ -416,27 +438,28 @@ def post_together_location(body, query, redis):
     room_data = json.loads(room_data)
     room_data["participant"].append(client_start_point)
 
-    redis.set(room_id, json.dumps(room_data), ex=TTL)
-    return {"room_id": room_id}
+    redis.set(redis_room_id_key, json.dumps(room_data), ex=TTL)
+
+    return {"msg": "주소 입력 완료"}
 
 
-def put_together_location(body, query, redis):
+def put_together_location(body, room_id, room_host_id, redis):
     TTL = 60 * 60 * 24 * 14
-    room_id = query.room_id
-    host_id = query.host_id
     generate_key.validate_uuid(room_id)
+    redis_room_id_key = f"room-{room_id}"
 
-    room_data = redis.get(room_id)
+    room_data = redis.get(redis_room_id_key)
     if not room_data:
         raise HTTPException(status_code=404, detail="Room not found")
 
     room_data = json.loads(room_data)
-    host_id_data = room_data["host_id"]
+    room_host_id_data = room_data["room_host_id"]
 
-    if host_id != host_id_data:
+    if room_host_id != room_host_id_data:
         raise HTTPException(status_code=404, detail="Not Permission")
 
     body_dict = body.dict().get("participant")
     room_data["participant"] = body_dict
-    redis.set(room_id, json.dumps(room_data), ex=TTL)
-    return {"room_id": room_id, "host_id": host_id}
+    redis.set(redis_room_id_key, json.dumps(room_data), ex=TTL)
+
+    return {"msg": "주소 수정 완료"}
