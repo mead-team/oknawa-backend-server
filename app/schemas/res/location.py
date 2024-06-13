@@ -43,8 +43,10 @@ class PostLocationPoint(BaseModel):
     end_x: float = Field(title="x좌표", description="x좌표")
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
-    vote: int
-    itinerary: list
+    vote: int = Field(default=0, title="투표수", description="투표수")
+    itinerary: list = Field(
+        title="외부MAP API 데이터", description="외부MAP API 데이터"
+    )
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
