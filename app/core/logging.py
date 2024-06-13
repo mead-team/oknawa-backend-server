@@ -15,8 +15,9 @@ steam_handler = logging.StreamHandler()
 logger.addHandler(steam_handler)
 
 
-def log_error(req_body, res_body):
+def log_error(req_body, res_body, status_code):
     logging.error("-----------------------------------------------------------------")
+    logging.error(f"status_code: {status_code}")
     logging.error(f"request body: {req_body}")
     logging.error(f"response body: {res_body}")
     logging.error("-----------------------------------------------------------------")
@@ -40,8 +41,8 @@ async def logging_print(request: Request, call_next):
     response = await call_next(request)
     response_body = [chunk async for chunk in response.body_iterator]
     response.body_iterator = iterate_in_threadpool(iter(response_body))
-    if response.status_code != 200:
+    if response.status_code not in (200, 201):
         req_body = await get_body(request)
         res_body = (b"".join(response_body)).decode()
-        log_error(req_body.decode(), res_body)
+        log_error(req_body.decode(), res_body, response.status_code)
     return response
