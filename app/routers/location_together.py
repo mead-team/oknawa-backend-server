@@ -5,7 +5,7 @@ from app.core.dependency import get_redis
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
-from app.services import location as service_location
+from app.services import location_together as service_location_together
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location_together])
 
@@ -20,7 +20,7 @@ def post_together(
     body: req_location.Participant,
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_together(body, redis)
+    return service_location_together.post_together(body, redis)
 
 
 @router.get(
@@ -33,7 +33,7 @@ def get_together_location_polling(
     room_id: str = Path(title="출발지 입력방 ID", description="출발지 입력방 ID"),
     redis: Redis = Depends(get_redis),
 ):
-    response = service_location.get_together_location_polling(room_id, redis)
+    response = service_location_together.get_together_location_polling(room_id, redis)
     return response
 
 
@@ -47,7 +47,9 @@ def get_together_location_long_polling(
     room_id: str = Path(title="출발지 입력방 ID", description="출발지 입력방 ID"),
     redis: Redis = Depends(get_redis),
 ):
-    response = service_location.get_together_location_long_polling(room_id, redis)
+    response = service_location_together.get_together_location_long_polling(
+        room_id, redis
+    )
     return response
 
 
@@ -62,7 +64,7 @@ def post_together_location(
     room_id: str = Path(title="출발지 입력방 ID", description="출발지 입력방 ID"),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_together_location(body, room_id, redis)
+    return service_location_together.post_together_location(body, room_id, redis)
 
 
 @router.put(
@@ -79,4 +81,6 @@ def put_together_location(
     ),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.put_together_location(body, room_id, room_host_id, redis)
+    return service_location_together.put_together_location(
+        body, room_id, room_host_id, redis
+    )
