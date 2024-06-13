@@ -17,7 +17,7 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location])
     "/point",
     status_code=200,
     response_model=res_location.PostLocationPoint,
-    summary="사용자들간의 중간지점역 찾기, 삭제예정",
+    summary="[legacy] 사용자들간의 중간지점역 찾기, 삭제예정",
     deprecated=True,
 )
 def post_location_point(
@@ -39,6 +39,21 @@ def post_location_point(
     todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
     """
     return service_location.post_location_point(body, api_type, priority, db, redis)
+
+
+@router.get(
+    "/point",
+    status_code=200,
+    response_model=res_location.GetLocationPoint,
+    summary="[legacy] share key를 이용한 사용자들간의 중간지점역 찾기 (결과확정 페이지) 삭제 예정",
+    deprecated=True,
+)
+def get_location_point_legacy(
+    query: req_location.GetLocationPoint = Depends(),
+    redis: Redis = Depends(get_redis),
+):
+    share_key = query.share_key
+    return service_location.get_location_point(share_key, redis)
 
 
 @router.get(
