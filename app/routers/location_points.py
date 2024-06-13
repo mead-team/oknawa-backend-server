@@ -8,7 +8,7 @@ from app.core.dependency import get_db, get_redis
 from app.schemas.base import RouterTags
 from app.schemas.req import location as req_location
 from app.schemas.res import location as res_location
-from app.services import location as service_location
+from app.services import location_points as service_location_points
 
 router = APIRouter(prefix="/location", tags=[RouterTags.location_points])
 
@@ -37,7 +37,9 @@ def post_location_points(
     """
     todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
     """
-    return service_location.post_location_points(body, api_type, priority, db, redis)
+    return service_location_points.post_location_points(
+        body, api_type, priority, db, redis
+    )
 
 
 @router.get(
@@ -52,7 +54,7 @@ def get_location_points(
     ),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.get_location_points(map_id, redis)
+    return service_location_points.get_location_points(map_id, redis)
 
 
 @router.get(
@@ -67,7 +69,7 @@ def get_location_points_long_polling(
     ),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.get_location_points_long_polling(map_id, redis)
+    return service_location_points.get_location_points_long_polling(map_id, redis)
 
 
 @router.get(
@@ -83,7 +85,9 @@ async def get_location_points_sse(
     ),
     redis: Redis = Depends(get_redis),
 ):
-    return await service_location.get_location_points_long_sse(request, map_id, redis)
+    return await service_location_points.get_location_points_long_sse(
+        request, map_id, redis
+    )
 
 
 @router.post(
@@ -99,7 +103,7 @@ def post_location_points_vote(
     share_key: str = Query(title="중간지점역 키", description="중간지점역 키"),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_location_points_vote(map_id, share_key, redis)
+    return service_location_points.post_location_points_vote(map_id, share_key, redis)
 
 
 @router.post(
@@ -116,6 +120,6 @@ def post_location_points_confirm(
     share_key: str = Query(title="중간지점역 키", description="중간지점역 키"),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.post_location_points_conirm(
+    return service_location_points.post_location_points_conirm(
         map_id, map_host_id, share_key, redis
     )
