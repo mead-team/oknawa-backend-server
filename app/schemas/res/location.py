@@ -43,13 +43,37 @@ class PostLocationPoint(BaseModel):
     end_x: float = Field(title="x좌표", description="x좌표")
     end_y: float = Field(title="y좌표", description="y좌표")
     share_key: str = Field(title="공유 param key", description="공유 param key")
-    itinerary: list
+    vote: int = Field(default=0, title="투표수", description="투표수")
+    itinerary: list = Field(
+        title="외부MAP API 데이터", description="외부MAP API 데이터"
+    )
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
 
 
 class PostLocationPoints(BaseModel):
-    station_info: list[PostLocationPoint]
+    map_id: str = Field(title="추천받기 방 ID", description="추천받기 방 ID")
+    map_host_id: str = Field(title="추천받기 방장 ID", description="추천받기 방장 ID")
+
+
+class GetLocationPoints(PostLocationPoints):
+    map_host_id: str = Field(exclude=True)
+    station_info: list[PostLocationPoint] = Field(
+        title="중간지점역 정보 리스트", description="중간지점역 정보 리스트"
+    )
     request_info: PostRequestInfo = Field(title="요청 정보", description="요청 정보")
+    confirmed: str | None = Field(
+        default=None,
+        title="선호도투표 확정키",
+        description="확정된 중간지점역 share_key",
+    )
+
+
+class PostLocationPointsVote(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
+
+
+class PostLocationPointsConfirm(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
 
 
 class GetLocationPoint(PostLocationPoint):
@@ -85,12 +109,12 @@ class GetTogetherLocation(BaseModel):
 
 class PostTogetherHost(BaseModel):
     room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
-    host_id: str = Field(title="호스트 uuid", description="호스트 uuid")
+    room_host_id: str = Field(title="호스트 uuid", description="호스트 uuid")
 
 
 class PostTogetherClient(BaseModel):
-    room_id: str = Field(title="함께 입력 공간 uuid", description="함께 입력 공간 uuid")
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
 
 
-class PutTogetherHost(PostTogetherHost):
-    pass
+class PutTogetherHost(BaseModel):
+    msg: str = Field(title="응답 메시지", description="응답 메시지")
