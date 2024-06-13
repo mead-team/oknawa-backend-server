@@ -20,7 +20,7 @@ api-restart:
 	docker restart oknawa_api
 
 code-beauty:
-	black . && isort .
+	pre-commit run --all-files
 
 app-log:
 	docker-compose logs -f app

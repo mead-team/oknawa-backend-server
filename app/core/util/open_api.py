@@ -339,7 +339,9 @@ def call_googlemap_api_participant_itineraries(body, center_location_data_list):
                 "origin": origin,
                 "destination": destination,
                 "travelMode": "TRANSIT",
-                "transitPreferences": {"allowedTravelModes": ["SUBWAY"]},  # 선호 대중교통
+                "transitPreferences": {
+                    "allowedTravelModes": ["SUBWAY"]
+                },  # 선호 대중교통
                 "languageCode": "ko-KR",
             }
             response = requests.post(
