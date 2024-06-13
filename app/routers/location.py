@@ -42,16 +42,18 @@ def post_location_point(
 
 
 @router.get(
-    "/point",
+    "/point/{share_key}",
     status_code=200,
     response_model=res_location.GetLocationPoint,
     summary="✅ share key를 이용한 사용자들간의 중간지점역 찾기 (결과확정 페이지)",
 )
 def get_location_point(
-    query: req_location.GetLocationPoint = Depends(),
+    share_key: str = Path(
+        title="(결과확정 페이지) ID", description="(결과확정 페이지) ID"
+    ),
     redis: Redis = Depends(get_redis),
 ):
-    return service_location.get_location_point(query, redis)
+    return service_location.get_location_point(share_key, redis)
 
 
 @router.get(
