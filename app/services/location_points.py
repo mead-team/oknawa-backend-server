@@ -11,7 +11,7 @@ from app.core.util import distance_calculator, generate_key, open_api
 from app.crud import location
 
 
-def post_location_points(body, api_type, priority, db, redis):
+async def post_location_points(body, api_type, priority, db, redis):
     """
         사용자들의 좌표를 받아 중간지점좌표와 가장가까운 역의 좌표를 구한 뒤
         tmap의 API를 이용하여 소요시간, 가는경로를 구하여 리턴 (도보 - 대중교통 - 도보)
@@ -42,11 +42,11 @@ def post_location_points(body, api_type, priority, db, redis):
     )
 
     if api_type == "google_map":
-        station_info_list = open_api.call_googlemap_api_participant_itineraries(
+        station_info_list = await open_api.call_googlemap_api_participant_itineraries(
             body, center_location_data_list
         )
     elif api_type == "t_map" or api_type is None:
-        station_info_list = open_api.call_tmap_api_participant_itineraries(
+        station_info_list = await open_api.call_tmap_api_participant_itineraries(
             body, center_location_data_list
         )
     else:

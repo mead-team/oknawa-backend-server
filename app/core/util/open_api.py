@@ -1,12 +1,14 @@
+import asyncio
 from collections import defaultdict
 from urllib.parse import quote
 
+import aiohttp
 import polyline
 import requests
 from fastapi import HTTPException
 
 from app.core.setting import settings
-from app.core.util import route_util
+from app.core.util import aiohttp_util, route_util
 
 
 def call_open_data_api_popular_subway():
@@ -184,7 +186,7 @@ def call_googlemap_api_participant_itinerary(body, center_location_data):
     return itinerary_list
 
 
-def call_tmap_api_participant_itineraries(body, center_location_data_list):
+async def call_tmap_api_participant_itineraries(body, center_location_data_list):
     """
     "station_name": center_location_data.name,
         "address_name": center_location_data.address,
@@ -296,74 +298,94 @@ def call_tmap_api_participant_itineraries(body, center_location_data_list):
     return station_info_list
 
 
-def call_googlemap_api_participant_itineraries(body, center_location_data_list):
+async def googlemap_api_post_and_parse(
+    session, directions_url, headers, source_and_target
+):
+    idx = source_and_target.pop("idx")
+    name = source_and_target.pop("name")
+    region_name = source_and_target.pop("region_name")
+
+    response = await aiohttp_util.post(
+        session, directions_url, headers=headers, json=source_and_target
+    )
+    routes = response.get("routes")[0]
+    duration = int(routes.get("duration")[:-1])
+    decoded_polyline = polyline.decode(routes.get("polyline").get("encodedPolyline"))
+    total_polyline = [{"lng": lng, "lat": lat} for lat, lng in decoded_polyline]
+
+    itinerary = {
+        "idx": idx,
+        "name": name,
+        "region_name": region_name,
+        "itinerary": {"total_polyline": total_polyline, "totalTime": duration},
+    }
+    return itinerary
+
+
+async def call_googlemap_api_participant_itineraries(body, center_location_data_list):
     directions_url = f"{settings.GOOGLE_API_URL}/directions/v2:computeRoutes"
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": f"{settings.GOOGLE_API_KEY}",
-        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",  # 반환필드 선택
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
     }
 
     station_info_list = []
-    for center_location_tuple in center_location_data_list:
+    for idx, center_location_tuple in enumerate(center_location_data_list):
         center_location_data = center_location_tuple[1]
         station_info = {
             "station_name": center_location_data.name,
             "address_name": center_location_data.address,
             "end_x": center_location_data.location_x,
             "end_y": center_location_data.location_y,
+            "itinerary": [],
         }
 
-        itinerary_list = []
-        for participant in body.participant:
-            itinerary = dict()
-            origin_latitude = participant.start_y
-            origin_longitude = participant.start_x
-            destination_latitude = center_location_data.location_y
-            destination_longitude = center_location_data.location_x
-
-            origin = {
-                "location": {
-                    "latLng": dict(latitude=origin_latitude, longitude=origin_longitude)
-                }
-            }
-            destination = {
-                "location": {
-                    "latLng": dict(
-                        latitude=destination_latitude, longitude=destination_longitude
-                    )
-                }
-            }
-
-            source_and_target = {
-                "origin": origin,
-                "destination": destination,
+        source_and_target_list = [
+            {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": participant.start_y,
+                            "longitude": participant.start_x,
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": center_location_data.location_y,
+                            "longitude": center_location_data.location_x,
+                        }
+                    }
+                },
                 "travelMode": "TRANSIT",
-                "transitPreferences": {
-                    "allowedTravelModes": ["SUBWAY"]
-                },  # 선호 대중교통
+                "transitPreferences": {"allowedTravelModes": ["SUBWAY"]},
                 "languageCode": "ko-KR",
+                "name": participant.name,
+                "region_name": participant.region_name,
+                "idx": idx,
             }
-            response = requests.post(
-                directions_url,
-                headers=headers,
-                json=source_and_target,
-            )
-            response_route = response.json().get("routes")[0]
-            duration = int(response_route.get("duration")[:-1])
-            decoded_polyline = polyline.decode(
-                response_route.get("polyline").get("encodedPolyline")
-            )
-            total_polyline = [{"lng": lng, "lat": lat} for lat, lng in decoded_polyline]
-            itinerary.update(total_polyline=total_polyline, totalTime=duration)
-            itinerary_list.append(
-                dict(
-                    name=participant.name,
-                    region_name=participant.region_name,
-                    itinerary=itinerary,
-                )
-            )
-        station_info["itinerary"] = itinerary_list
+            for participant in body.participant
+        ]
+        station_info["source_and_target_list"] = source_and_target_list
         station_info_list.append(station_info)
+
+    async with aiohttp.ClientSession() as session:
+        post_and_parse_tasks = []
+        for station_info in station_info_list:
+            source_and_target_list = station_info.pop("source_and_target_list")
+            for source_and_target in source_and_target_list:
+                post_and_parse_tasks.append(
+                    googlemap_api_post_and_parse(
+                        session, directions_url, headers, source_and_target
+                    )
+                )
+
+        itineraries = await asyncio.gather(*post_and_parse_tasks)
+
+    for itinerary in itineraries:
+        idx = itinerary.pop("idx")
+        station_info_list[idx]["itinerary"].append(itinerary)
 
     return station_info_list
