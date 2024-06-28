@@ -90,7 +90,7 @@ async def get_point_place(path, query):
         query.update(category_group_code="CE7", query="카페")
 
     async with aiohttp.ClientSession() as session:
-        response = await aiohttp_util.fetch(session, url, headers, query)
+        status_code, response = await aiohttp_util.fetch(session, url, headers, query)
 
         tasks = []
         for document in response.get("documents"):
@@ -103,6 +103,7 @@ async def get_point_place(path, query):
         api_responses = await asyncio.gather(*tasks)
 
         for document, api_response in zip(response.get("documents"), api_responses):
+            status_code, api_response = api_response
             api_basic_info = api_response.get("basicInfo")
             document.update(main_photo_url=api_basic_info.get("mainphotourl"))
             document.update(open_hour=api_basic_info.get("openHour"))
