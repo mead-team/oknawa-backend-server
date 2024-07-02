@@ -19,7 +19,7 @@ router = APIRouter(prefix="/location", tags=[RouterTags.location_points])
     response_model=res_location.PostLocationPoints,
     summary="✅ 사용자들간의 중간지점역 찾기 (추천받기)",
 )
-def post_location_points(
+async def post_location_points(
     body: req_location.PostLocationPoint,
     api_type: Literal["t_map", "google_map"] | None = Query(
         default=None, title="Map API 종류", description="t_map or google_map"
@@ -37,7 +37,7 @@ def post_location_points(
     """
     todo: 구글 API로 완전 이전시 request의 api_type 쿼리스트링 삭제 예정
     """
-    return service_location_points.post_location_points(
+    return await service_location_points.post_location_points(
         body, api_type, priority, db, redis
     )
 
