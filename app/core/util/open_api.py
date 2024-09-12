@@ -14,18 +14,17 @@ from app.core.util import aiohttp_util, route_util
 def call_open_data_api_popular_subway():
     url = f"{settings.OPEN_DATA_API_URL}/json/CardSubwayStatsNew/1/1000/20231201"
     api_response = requests.get(url).json().get("CardSubwayStatsNew").get("row")
-    total_passenger = defaultdict(lambda: {"RIDE_PASGR_NUM": 0, "ALIGHT_PASGR_NUM": 0})
+    total_passenger = defaultdict(lambda: {"GTON_TNOPE": 0, "GTOFF_TNOPE": 0})
 
     for subway in api_response:
-        subway_name = subway["SUB_STA_NM"]
-        total_passenger[subway_name]["RIDE_PASGR_NUM"] += subway["RIDE_PASGR_NUM"]
-        total_passenger[subway_name]["ALIGHT_PASGR_NUM"] += subway["ALIGHT_PASGR_NUM"]
+        subway_name = subway["SBWY_STNS_NM"]
+        total_passenger[subway_name]["GTON_TNOPE"] += subway["GTON_TNOPE"]
+        total_passenger[subway_name]["GTOFF_TNOPE"] += subway["GTOFF_TNOPE"]
 
     subway_list = [
         {
             "subway_name": subway_name,
-            "total_passenger": passenger["RIDE_PASGR_NUM"]
-            + passenger["ALIGHT_PASGR_NUM"],
+            "total_passenger": passenger["GTON_TNOPE"] + passenger["GTOFF_TNOPE"],
         }
         for subway_name, passenger in total_passenger.items()
     ]
